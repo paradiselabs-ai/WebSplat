@@ -1,0 +1,61 @@
+# Dependency directories
+node_modules/
+webdev-env/
+
+# Environment variables
+.env
+
+# Build outputs
+build/
+dist/
+
+# IDE and editor files
+.vscode/
+*.swp
+*.swo
+.idea/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Python cache files
+__pycache__/
+*.pyc
+
+# Log files
+*.log
+
+# Database files
+*.sqlite3
+
+# Temporary files
+*.tmp
+
+# React build files
+/build
+
+# Flask instance folder
+instance/
+
+# Coverage reports
+htmlcov/
+.coverage
+
+# Pytest cache
+.pytest_cache/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Replit specific
+.replit
+replit.nix
+
+# Miscellaneous
+*.bak
+*.cache
+*.orig

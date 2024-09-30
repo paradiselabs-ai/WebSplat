@@ -1,0 +1,171 @@
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    color: #333;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f4f4f4;
+}
+
+header {
+    background-color: #35424a;
+    color: #ffffff;
+    padding: 1rem;
+    text-align: center;
+    border-radius: 5px 5px 0 0;
+}
+
+header h1 {
+    margin: 0;
+}
+
+main {
+    background-color: #ffffff;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h2, h3 {
+    color: #35424a;
+    border-bottom: 2px solid #e8491d;
+    padding-bottom: 10px;
+}
+
+button {
+    background-color: #e8491d;
+    color: #ffffff;
+    border: none;
+    padding: 10px 20px;
+    margin: 5px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #f16735;
+}
+
+#ai-model-selection, #agent-action {
+    margin-bottom: 20px;
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 5px;
+}
+
+#ai-model-selection label {
+    margin-right: 15px;
+    display: inline-block;
+    margin-bottom: 10px;
+}
+
+select, input[type="text"] {
+    padding: 8px;
+    margin: 5px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    width: calc(100% - 10px);
+}
+
+#project-state, #agent-actions, #performance-metrics {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 5px;
+    margin-top: 20px;
+}
+
+#state-display {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    background-color: #ffffff;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+#action-log, #metrics-log {
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: #ffffff;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+}
+
+#action-log p, #metrics-log p {
+    margin: 5px 0;
+    padding: 5px;
+    background-color: #e6e6e6;
+    border-radius: 3px;
+}
+
+#dashboard {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+#aggregated-metrics {
+    flex-basis: 100%;
+    margin-bottom: 20px;
+}
+
+#metrics-list {
+    list-style-type: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+#metrics-list li {
+    flex-basis: calc(33% - 10px);
+    background-color: #f0f0f0;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#charts {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+}
+
+#model-usage-chart, #execution-time-chart {
+    width: 48%;
+    height: 300px;
+    background-color: #ffffff;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    button, select, input[type="text"] {
+        width: 100%;
+        margin: 5px 0;
+    }
+
+    #metrics-list li {
+        flex-basis: 100%;
+    }
+
+    #charts {
+        flex-direction: column;
+    }
+
+    #model-usage-chart, #execution-time-chart {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+}
