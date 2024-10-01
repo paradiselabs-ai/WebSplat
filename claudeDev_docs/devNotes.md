@@ -6,11 +6,21 @@
 - Added pytest and pytest-cov to requirements.txt for testing and code coverage
 - Set up pytest.ini for test configuration
 - Successfully installed new testing dependencies
+- Removed previous git versioning
+- Created a new GitHub repository for the project
+- Added .gitignore to exclude claudeDev_docs directory
+- Pushed the initial project setup to the GitHub repository
 
 ## Current Focus
 - Running and fixing unit tests for the AI agent system and Flask routes
 - Implementing advanced caching system using a database
 - Enhancing project state management with version control and rollback capabilities
+
+## Git and Version Control
+- Repository: https://github.com/paradiselabs-ai/WebSplat
+- Main branch: main
+- .gitignore: Excludes claudeDev_docs/ directory
+- Initial commit: "Initial commit: WebSplat project setup (excluding claudeDev_docs)"
 
 ## Best Practices
 - Follow React best practices for component structure and state management
@@ -22,6 +32,8 @@
 - Use type hints in Python code for better maintainability
 - Regularly update documentation to reflect current project state and future plans
 - Use pytest for running tests and measuring code coverage
+- Commit changes regularly and use meaningful commit messages
+- Keep sensitive information (like API keys) out of version control
 
 ## Testing Strategy
 - Write unit tests for individual components of the AI agent system

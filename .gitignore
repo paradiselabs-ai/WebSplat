@@ -59,3 +59,4 @@ replit.nix
 *.bak
 *.cache
 *.origclaudeDev_docs/
+*claudeDev_docs/
