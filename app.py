@@ -15,10 +15,14 @@ logger = logging.getLogger(__name__)
 
 # Set up credentials
 credentials_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-if credentials_json is None:
+if not credentials_json:
     raise ValueError("GOOGLE_APPLICATION_CREDENTIALS environment variable not set.")
-credentials_dict = json.loads(credentials_json)
-credentials = service_account.Credentials.from_service_account_info(credentials_dict)
+
+try:
+    credentials_info = json.loads(credentials_json)
+    credentials = service_account.Credentials.from_service_account_info(credentials_info)
+except json.JSONDecodeError:
+    raise ValueError("GOOGLE_APPLICATION_CREDENTIALS is not valid JSON.")
 
 # Initialize AI Platform with credentials
 aiplatform.init(credentials=credentials)

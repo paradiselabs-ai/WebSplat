@@ -11,8 +11,13 @@
 - Modified ai_agents.py to include get_status() method for AIAgent class
 - Added current_task and last_action_timestamp attributes to AIAgent class
 - Updated make_decision() and execute_task() methods in AIAgent class to set current_task and last_action_timestamp
+- Updated credential handling in both app.py and ai_agents.py:
+  - Now parsing Google credentials JSON directly from GOOGLE_APPLICATION_CREDENTIALS environment variable
+  - Added error handling for JSON parsing and credential validation
+  - Ensured consistent credential handling across both files
 
 ## Current Focus
+- Testing the application to ensure it runs without errors related to credentials
 - Testing the new interface to ensure all functionality works as expected with the new file structure and updated routes
 - Implementing error handling on the frontend
 - Optimizing performance for responsiveness and efficiency
@@ -20,12 +25,13 @@
 ## Git and Version Control
 - Repository: https://github.com/paradiselabs-ai/WebSplat
 - Main branch: main
-- .gitignore: Excludes claudeDev_docs/ directory
+- .gitignore: Excludes claudeDev_docs/ directory and sensitive files (.env, google_credentials.json)
 - Recent commits:
   - "Update frontend design"
   - "Rename frontend files for consistency"
   - "Update backend to support new frontend"
   - "Implement get_status() method in AIAgent class"
+  - "Update credential handling in app.py and ai_agents.py"
 
 ## Best Practices
 - Follow React best practices for component structure and state management
@@ -61,6 +67,9 @@
 4. Issue: Difficulty in tracking AI agent performance
    Solution: Implemented a comprehensive dashboard for visualizing AI usage and performance metrics
 
+5. Issue: Secure handling of credentials
+   Solution: Use environment variables for sensitive information and parse JSON directly in the application
+
 ## Hybrid AI Agent Implementation Notes
 - Use the estimate_complexity method to determine which AI model (o1 or Vertex AI) to use for a given task
 - Implement a fallback mechanism to switch between models if one fails or produces unsatisfactory results
@@ -75,7 +84,8 @@
 - Ensure regular updates of the dashboard to reflect the most recent AI agent activities
 
 ## Next Steps
-- Thoroughly test the new interface to ensure all functionality works as expected
+- Thoroughly test the application to ensure it runs without errors related to credentials
+- Test all functionalities of the new interface
 - Implement error handling on the frontend, particularly for API responses
 - Optimize performance, focusing on responsiveness and efficiency with large amounts of data
 - Update unit tests to reflect recent changes in the backend

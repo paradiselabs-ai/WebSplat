@@ -23,15 +23,20 @@ logger = logging.getLogger(__name__)
 credentials_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
 if credentials_json is None:
     raise ValueError("GOOGLE_APPLICATION_CREDENTIALS environment variable not set.")
-credentials_dict = json.loads(credentials_json)
-project_id = credentials_dict
 
-logger.info(f"AI Agents - Project ID: {credentials_dict}")
-logger.info(f"AI Agents - Credentials path: {credentials_json}")
+try:
+    credentials_info = json.loads(credentials_json)
+    credentials = service_account.Credentials.from_service_account_info(credentials_info)
+    project_id = credentials_info.get('project_id')
+    if not project_id:
+        raise ValueError("Project ID not found in credentials JSON.")
+except json.JSONDecodeError:
+    raise ValueError("GOOGLE_APPLICATION_CREDENTIALS is not valid JSON.")
+
+logger.info(f"AI Agents - Project ID: {project_id}")
 
 # Initialize Vertex AI
 try:
-    credentials = service_account.Credentials.from_service_account_info(credentials_dict)
     vertexai.init(project=project_id, location="us-central1", credentials=credentials)
     aiplatform.init(credentials=credentials)
     logger.info("AI Agents - Vertex AI initialized successfully")

@@ -19,11 +19,15 @@ Implement New Design and Update Backend
 3. [x] Update ai_agents.py:
    - Add get_status() method to AIAgent class
    - Make necessary adjustments to support new functionality
-4. [ ] Test the new interface:
-   - Ensure all functionality works as expected with the new file structure and updated routes
-5. [ ] Implement error handling on the frontend:
+4. [x] Update credential handling in app.py and ai_agents.py:
+   - Parse Google credentials JSON directly from environment variable
+   - Add error handling for JSON parsing and credential validation
+5. [ ] Test the application:
+   - Ensure it runs without errors related to credentials
+   - Test all functionalities of the new interface
+6. [ ] Implement error handling on the frontend:
    - Update JavaScript to handle responses with success flags
-6. [ ] Optimize performance:
+7. [ ] Optimize performance:
    - Ensure the interface is responsive and efficient, especially with large amounts of data
 
 ## Notes
@@ -37,9 +41,10 @@ Implement New Design and Update Backend
 - Updated index.html to reference correct CSS and JS files
 - Updated app.py with new routes and success flags
 - Updated ai_agents.py with get_status() method and necessary adjustments
+- Updated credential handling in app.py and ai_agents.py
 
 ## Next Steps
-- Test the new interface thoroughly
+- Test the application thoroughly
 - Implement error handling on the frontend
 - Optimize performance
 - After implementing and testing the new design, revisit and update unit tests
