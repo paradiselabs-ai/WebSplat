@@ -22,12 +22,14 @@ Implement New Design and Update Backend
 4. [x] Update credential handling in app.py and ai_agents.py:
    - Parse Google credentials JSON directly from environment variable
    - Add error handling for JSON parsing and credential validation
-5. [ ] Test the application:
+5. [x] Reformat .env file:
+   - Update GOOGLE_APPLICATION_CREDENTIALS to be a single-line JSON string
+6. [ ] Test the application:
    - Ensure it runs without errors related to credentials
    - Test all functionalities of the new interface
-6. [ ] Implement error handling on the frontend:
+7. [ ] Implement error handling on the frontend:
    - Update JavaScript to handle responses with success flags
-7. [ ] Optimize performance:
+8. [ ] Optimize performance:
    - Ensure the interface is responsive and efficient, especially with large amounts of data
 
 ## Notes
@@ -42,6 +44,7 @@ Implement New Design and Update Backend
 - Updated app.py with new routes and success flags
 - Updated ai_agents.py with get_status() method and necessary adjustments
 - Updated credential handling in app.py and ai_agents.py
+- Reformatted .env file to contain GOOGLE_APPLICATION_CREDENTIALS as a single-line JSON string
 
 ## Next Steps
 - Test the application thoroughly

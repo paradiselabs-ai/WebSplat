@@ -30,8 +30,8 @@ try:
     project_id = credentials_info.get('project_id')
     if not project_id:
         raise ValueError("Project ID not found in credentials JSON.")
-except json.JSONDecodeError:
-    raise ValueError("GOOGLE_APPLICATION_CREDENTIALS is not valid JSON.")
+except json.JSONDecodeError as e:
+    raise ValueError(f"GOOGLE_APPLICATION_CREDENTIALS is not valid JSON: {str(e)}")
 
 logger.info(f"AI Agents - Project ID: {project_id}")
 

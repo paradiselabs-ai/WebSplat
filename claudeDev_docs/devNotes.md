@@ -15,6 +15,8 @@
   - Now parsing Google credentials JSON directly from GOOGLE_APPLICATION_CREDENTIALS environment variable
   - Added error handling for JSON parsing and credential validation
   - Ensured consistent credential handling across both files
+- Reformatted .env file:
+  - Updated GOOGLE_APPLICATION_CREDENTIALS to be a single-line JSON string
 
 ## Current Focus
 - Testing the application to ensure it runs without errors related to credentials
@@ -32,6 +34,7 @@
   - "Update backend to support new frontend"
   - "Implement get_status() method in AIAgent class"
   - "Update credential handling in app.py and ai_agents.py"
+  - "Reformat .env file for proper credential handling"
 
 ## Best Practices
 - Follow React best practices for component structure and state management
@@ -69,6 +72,9 @@
 
 5. Issue: Secure handling of credentials
    Solution: Use environment variables for sensitive information and parse JSON directly in the application
+
+6. Issue: Multiline JSON in .env file
+   Solution: Reformat the JSON as a single line in the .env file for proper parsing
 
 ## Hybrid AI Agent Implementation Notes
 - Use the estimate_complexity method to determine which AI model (o1 or Vertex AI) to use for a given task
