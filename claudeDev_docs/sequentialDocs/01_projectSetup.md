@@ -4,6 +4,12 @@
 - Set up the initial project structure
 - Configure the development environment
 - Install necessary dependencies
+- Create a scalable multiple end-user system for many different users to access a user-specific instance and environment of their own, allowing for vast amounts of users to use websplat's multi-agent workflow in a specific environment
+- Figure out how to allow for potentially hundreds of users to use websplat in a specific environment and how to allow for potentially hundreds of users, if not more, to access all the features of websplat without having to enter their own API keys for each and every API connected to the websplat application
+- Come up with logistical solutions for scalable numbers of end-users being able to access websplat in a clean new websplat instance and environment specific to the end-user
+- Set up an authorization login to only provide access to end-users who have signed up for a websplat account and have paid to use certain services of websplat
+- Create a system of tiers for end-users who can pay for higher tier levels in order to utilize more websplat features than other end-users of a lower tier level
+- Create a way to handle so many different end-users and a database integration that can provide every end-user with a specific and new instance of websplat in their own environment for each end-user
 
 ## Steps
 

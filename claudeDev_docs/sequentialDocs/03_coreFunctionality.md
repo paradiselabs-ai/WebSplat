@@ -6,6 +6,8 @@
 - Create user interface for framework users to adjust AI parameters
 - Implement passive income generation features
 - Integrate SEO optimization tools
+- Set up a database, and ways to allow for a scalable amount of different users
+- Add an authorization system for allowing different users to log into their own accounts where their own instance and environment of websplat is provided for them.
 
 ## Steps
 

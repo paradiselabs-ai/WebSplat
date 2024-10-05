@@ -38,13 +38,14 @@ def initialize_project():
         coordinator.initialize_project()
         logger.info("Project initialized successfully")
         return jsonify({
+            "success": True,
             "project_state": coordinator.project_state,
             "performance_logs": coordinator.get_performance_logs(),
             "aggregated_metrics": coordinator.get_aggregated_metrics()
         })
     except Exception as e:
         logger.error(f"Error initializing project: {str(e)}")
-        return jsonify({"error": "Failed to initialize project"}), 500
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/next-step', methods=['POST'])
 def next_step():
@@ -52,17 +53,19 @@ def next_step():
         coordinator.next_step()
         logger.info("Next step executed successfully")
         return jsonify({
+            "success": True,
             "project_state": coordinator.project_state,
             "performance_logs": coordinator.get_performance_logs(),
             "aggregated_metrics": coordinator.get_aggregated_metrics()
         })
     except Exception as e:
         logger.error(f"Error executing next step: {str(e)}")
-        return jsonify({"error": "Failed to execute next step"}), 500
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/get-project-state')
 def get_project_state():
     return jsonify({
+        "success": True,
         "project_state": coordinator.project_state,
         "performance_logs": coordinator.get_performance_logs(),
         "aggregated_metrics": coordinator.get_aggregated_metrics()
@@ -80,6 +83,7 @@ def agent_action():
             decision, model_used, metrics = coordinator.agents[agent_role].make_decision(context, force_model=force_model)
             logger.info(f"Decision made by {agent_role} using {model_used}")
             return jsonify({
+                "success": True,
                 "decision": decision,
                 "model_used": model_used,
                 "metrics": metrics,
@@ -91,6 +95,7 @@ def agent_action():
             result, model_used, metrics = coordinator.agents[agent_role].execute_task(task, force_model=force_model)
             logger.info(f"Task executed by {agent_role} using {model_used}")
             return jsonify({
+                "success": True,
                 "result": result,
                 "model_used": model_used,
                 "metrics": metrics,
@@ -98,21 +103,20 @@ def agent_action():
                 "aggregated_metrics": coordinator.get_aggregated_metrics()
             })
         else:
-            return jsonify({"error": "Invalid action"}), 400
+            return jsonify({"success": False, "error": "Invalid action"}), 400
     except Exception as e:
         logger.error(f"Error in agent action: {str(e)}")
-        return jsonify({"error": "Failed to perform agent action"}), 500
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/update-website', methods=['POST'])
 def update_website():
     content = request.json.get('content', '')
     design = request.json.get('design', '')
-    # Here we would typically update the actual website files
-    # For now, we'll just update the project state
     coordinator.project_state['content'] = content
     coordinator.project_state['design'] = design
     logger.info("Website state updated")
     return jsonify({
+        "success": True,
         "status": "Website updated",
         "project_state": coordinator.project_state,
         "performance_logs": coordinator.get_performance_logs(),
@@ -121,24 +125,30 @@ def update_website():
 
 @app.route('/get-performance-logs')
 def get_performance_logs():
-    return jsonify(coordinator.get_performance_logs())
+    return jsonify({"success": True, "performance_logs": coordinator.get_performance_logs()})
 
 @app.route('/get-aggregated-metrics')
 def get_aggregated_metrics():
-    return jsonify(coordinator.get_aggregated_metrics())
+    return jsonify({"success": True, "aggregated_metrics": coordinator.get_aggregated_metrics()})
 
 @app.route('/dashboard-data')
 def dashboard_data():
     return jsonify({
+        "success": True,
         "project_state": coordinator.project_state,
         "performance_logs": coordinator.get_performance_logs(),
         "aggregated_metrics": coordinator.get_aggregated_metrics()
     })
 
+@app.route('/get-agent-statuses')
+def get_agent_statuses():
+    agent_statuses = {role: agent.get_status() for role, agent in coordinator.agents.items()}
+    return jsonify({"success": True, "agent_statuses": agent_statuses})
+
 @app.errorhandler(Exception)
 def handle_exception(e):
     logger.error(f"Unhandled exception: {str(e)}")
-    return jsonify({"error": "An unexpected error occurred"}), 500
+    return jsonify({"success": False, "error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)

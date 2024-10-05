@@ -4,6 +4,8 @@
 - Set up the basic React application structure
 - Create reusable components
 - Implement routing
+- Sign in authorization for multiple end-users of websplat
+- A dashboard for end-users when logging into their websplat account and using websplat to build a website
 
 ## Steps
 

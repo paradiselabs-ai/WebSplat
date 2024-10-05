@@ -60,3 +60,6 @@ replit.nix
 *.cache
 *.origclaudeDev_docs/
 *claudeDev_docs/
+
+.pythonlibs/
+.upm/

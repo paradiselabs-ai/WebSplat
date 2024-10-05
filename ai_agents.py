@@ -44,6 +44,8 @@ class AIAgent:
         self.role = role
         self.vertex_model = TextGenerationModel.from_pretrained("text-bison@001")
         self.performance_logs = []
+        self.current_task = None
+        self.last_action_timestamp = None
 
     def estimate_complexity(self, text):
         words = re.findall(r'\w+', text.lower())
@@ -91,6 +93,9 @@ class AIAgent:
             raise
 
     def make_decision(self, context, force_model=None):
+        self.current_task = "Making decision"
+        self.last_action_timestamp = datetime.now()
+        
         prompt = f"As an AI agent with the role of {self.role}, given the following context: {context}, what decision would you make or action would you take? Provide a detailed response with step-by-step reasoning."
         
         complexity = self.estimate_complexity(context)
@@ -107,9 +112,13 @@ class AIAgent:
             "response_length": len(response)
         }
 
+        self.current_task = None
         return response, model, metrics
 
     def execute_task(self, task, force_model=None):
+        self.current_task = task
+        self.last_action_timestamp = datetime.now()
+        
         prompt = f"As an AI agent with the role of {self.role}, execute the following task: {task}. Provide the result or output of the task execution with detailed explanations."
         
         complexity = self.estimate_complexity(task)
@@ -126,10 +135,22 @@ class AIAgent:
             "response_length": len(response)
         }
 
+        self.current_task = None
         return response, model, metrics
 
     def get_performance_logs(self):
         return self.performance_logs
+
+    def get_status(self):
+        return {
+            "role": self.role,
+            "current_task": self.current_task,
+            "last_action": self.last_action_timestamp.isoformat() if self.last_action_timestamp else None,
+            "total_calls": len(self.performance_logs),
+            "successful_calls": sum(1 for log in self.performance_logs if log.get("status") == "success"),
+            "error_calls": sum(1 for log in self.performance_logs if log.get("status") == "error"),
+            "average_execution_time": sum(log.get("execution_time", 0) for log in self.performance_logs) / len(self.performance_logs) if self.performance_logs else 0
+        }
 
 class AgentCoordinator:
     def __init__(self):

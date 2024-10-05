@@ -5,6 +5,8 @@
 - Implement API endpoints for frontend communication
 - Integrate AI models and external tools
 - Set up database and ORM
+- Scalable database for multiple end-users of websplat who upon logging in, using a secure authorization login, are able to access WebSplat in a new clean instance and environment for each end-user
+- Authorization system to determine the access level for each authorized end-user
 
 ## Steps
 
