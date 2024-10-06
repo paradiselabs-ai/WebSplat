@@ -2,6 +2,7 @@ from flask import Flask, render_template, jsonify, request
 from dotenv import load_dotenv
 import os
 import json
+import base64
 import logging
 from google.cloud import aiplatform
 from google.oauth2 import service_account
@@ -14,18 +15,23 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 # Set up credentials
-credentials_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-if credentials_json is None:
-    raise ValueError("GOOGLE_APPLICATION_CREDENTIALS environment variable not set.")
+credentials_base64 = os.getenv('GOOGLE_APPLICATION_CREDENTIALS_BASE64')
+if credentials_base64 is None:
+    raise ValueError("GOOGLE_APPLICATION_CREDENTIALS_BASE64 environment variable not set.")
 
 try:
+    credentials_json = base64.b64decode(credentials_base64).decode('utf-8')
     credentials_info = json.loads(credentials_json)
     credentials = service_account.Credentials.from_service_account_info(credentials_info)
-except json.JSONDecodeError as e:
-    raise ValueError(f"GOOGLE_APPLICATION_CREDENTIALS is not valid JSON: {str(e)}")
+    project_id = credentials_info.get('project_id')
+    if not project_id:
+        raise ValueError("Project ID not found in credentials JSON.")
+except Exception as e:
+    logger.error(f"Error decoding or parsing credentials: {str(e)}")
+    raise
 
 # Initialize AI Platform with credentials
-aiplatform.init(credentials=credentials)
+aiplatform.init(project=project_id, location="us-central1", credentials=credentials)
 
 app = Flask(__name__)
 

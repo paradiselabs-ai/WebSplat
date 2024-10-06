@@ -2,6 +2,7 @@ import random
 import json
 import os
 import time
+import base64
 from dotenv import load_dotenv
 from google.cloud import aiplatform
 import vertexai
@@ -20,18 +21,20 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(level
 logger = logging.getLogger(__name__)
 
 # Load credentials and project ID
-credentials_json = os.getenv('GOOGLE_APPLICATION_CREDENTIALS')
-if credentials_json is None:
-    raise ValueError("GOOGLE_APPLICATION_CREDENTIALS environment variable not set.")
+credentials_base64 = os.getenv('GOOGLE_APPLICATION_CREDENTIALS_BASE64')
+if credentials_base64 is None:
+    raise ValueError("GOOGLE_APPLICATION_CREDENTIALS_BASE64 environment variable not set.")
 
 try:
+    credentials_json = base64.b64decode(credentials_base64).decode('utf-8')
     credentials_info = json.loads(credentials_json)
     credentials = service_account.Credentials.from_service_account_info(credentials_info)
     project_id = credentials_info.get('project_id')
     if not project_id:
         raise ValueError("Project ID not found in credentials JSON.")
-except json.JSONDecodeError as e:
-    raise ValueError(f"GOOGLE_APPLICATION_CREDENTIALS is not valid JSON: {str(e)}")
+except Exception as e:
+    logger.error(f"Error decoding or parsing credentials: {str(e)}")
+    raise
 
 logger.info(f"AI Agents - Project ID: {project_id}")
 

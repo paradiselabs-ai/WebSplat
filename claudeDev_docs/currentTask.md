@@ -1,65 +1,59 @@
 # Current Task
 
-Implement New Design and Update Backend
+Implement New User Interface and Agent Workflow
 
 ## Objectives
-- Integrate the new frontend design with the existing backend
-- Update backend routes to support new frontend functionality
-- Ensure all components work together seamlessly
+- Create a sleek, intuitive, and modern user interface using React and Next.js
+- Implement a main chat interface for user-AI interaction
+- Develop a hierarchical agent workflow with O1 and Vertex AI as the main reasoning/brain
+- Integrate web search capabilities using Tavily or Perplexity
+- Implement an adjustable autonomy and creativity meter for agents
+- Create tabs for different aspects of website development (UI design, monetization, SEO)
+- Implement a toggle-able window view for UI design progress
 
 ## Steps
-1. [x] Rename HTML, CSS, and JS files:
-   - newDesign.html to index.html
-   - newDesign.css to styles.css
-   - newDesign.js to script.js
-2. [x] Update app.py:
-   - Add new route for getting agent statuses
-   - Ensure all routes return a success flag
-   - Update existing routes to work with the new frontend
-3. [x] Update ai_agents.py:
-   - Add get_status() method to AIAgent class
-   - Make necessary adjustments to support new functionality
-4. [x] Update credential handling in app.py and ai_agents.py:
-   - Parse Google credentials JSON directly from environment variable
-   - Add error handling for JSON parsing and credential validation
-5. [x] Reformat .env file:
-   - Update GOOGLE_APPLICATION_CREDENTIALS to be a single-line JSON string
-6. [ ] Test the application:
-   - Ensure it runs without errors related to credentials
-   - Test all functionalities of the new interface
-7. [ ] Implement error handling on the frontend:
-   - Update JavaScript to handle responses with success flags
-8. [ ] Optimize performance:
-   - Ensure the interface is responsive and efficient, especially with large amounts of data
+1. [ ] Update the frontend to React/Next.js:
+   - Set up a new React/Next.js project
+   - Create a main chat interface component
+   - Implement tabs for different aspects of website development
+   - Create an adjustable autonomy/creativity meter component
+   - Implement a toggle-able window view for UI design progress
+2. [ ] Update backend to support new frontend functionality:
+   - Implement routes for the main chat interface
+   - Create endpoints for different agent functionalities
+   - Implement web search integration (Tavily or Perplexity)
+3. [ ] Refactor AI agent system:
+   - Implement hierarchical agent workflow with O1 and Vertex AI at the top
+   - Create modular, task-switchable lower-level agents
+   - Implement inter-agent communication and task delegation
+4. [ ] Integrate web search functionality:
+   - Implement Tavily or Perplexity API integration for web searches
+   - Create a system for agents to use search results in their decision-making
+5. [ ] Implement autonomy and creativity control:
+   - Create a system to adjust agent behavior based on the autonomy/creativity meter
+   - Implement logic for more or less user prompting based on the meter setting
+6. [ ] Create collaborative agent workflow:
+   - Implement a system for agents to delegate tasks to each other
+   - Create a communication system between agents
+7. [ ] Integrate O1 model as the main reasoning/brain:
+   - Implement O1 model integration for high-level decision making
+   - Create a system for O1 to delegate tasks to other agents and models
+8. [ ] Implement progress visualization:
+   - Create components to display progress of UI design, monetization strategies, and SEO optimization
+   - Implement real-time updates of progress in the frontend
+9. [ ] Test the entire system:
+   - Conduct thorough testing of all components and their interactions
+   - Ensure smooth communication between frontend, backend, and AI agents
+10. [ ] Optimize performance and user experience:
+    - Refine UI/UX based on testing results
+    - Optimize backend for efficient handling of multiple AI agent interactions
 
 ## Notes
-- Keep in mind the "5 laws" of WebSplat when making changes
 - Ensure all changes align with the project's goals of showcasing AI capabilities and generating passive income
 - Consider user experience and interface responsiveness throughout the implementation
-
-## Completed Tasks
-- Created new design files (HTML, CSS, JS)
-- Renamed design files to standard names (index.html, styles.css, script.js)
-- Updated index.html to reference correct CSS and JS files
-- Updated app.py with new routes and success flags
-- Updated ai_agents.py with get_status() method and necessary adjustments
-- Updated credential handling in app.py and ai_agents.py
-- Reformatted .env file to contain GOOGLE_APPLICATION_CREDENTIALS as a single-line JSON string
+- Regularly update documentation to reflect new features and workflows
 
 ## Next Steps
-- Test the application thoroughly
-- Implement error handling on the frontend
-- Optimize performance
-- After implementing and testing the new design, revisit and update unit tests
-- Run the pytest command to execute all tests
-- Analyze test results and identify failing tests
-- Debug and fix any failing tests
-- Add additional tests to improve coverage if needed
-
-## Future Considerations
-- Implement collaborative features for AI agents to work on tasks simultaneously
-- Enhance the dashboard with more advanced analytics and visualizations
-- Implement A/B testing capabilities for comparing different AI strategies
-- Develop a plugin system for easy integration of new AI models or services
-- Research and implement advanced caching system
-- Design and implement version control system for project states
+- Begin implementation of the React/Next.js frontend
+- Start refactoring the AI agent system to support the new hierarchical workflow
+- Investigate and implement web search API integration
