@@ -3,257 +3,70 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WebDevML - AI-Managed Website</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>WebSplat AI Project Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <header>
-        <h1>WebDevML</h1>
-        <p>An Autonomous AI-Managed Website Project</p>
-    </header>
-    <main>
-        <h2>AI Agent Decision Making Process</h2>
-        <button id="initialize-project">Initialize Project</button>
-        <button id="next-step">Next Step</button>
-        
-        <div id="ai-model-selection">
-            <h3>AI Model Selection:</h3>
-            <label>
-                <input type="radio" name="ai-model" value="auto" checked> Auto (Based on Complexity)
-            </label>
-            <label>
-                <input type="radio" name="ai-model" value="o1"> Force o1 Model
-            </label>
-            <label>
-                <input type="radio" name="ai-model" value="vertex"> Force Vertex AI
-            </label>
-        </div>
-
-        <div id="agent-action">
-            <h3>Manual Agent Action:</h3>
-            <select id="agent-role">
-                <option value="project_manager">Project Manager</option>
-                <option value="web_developer">Web Developer</option>
-                <option value="content_creator">Content Creator</option>
-                <option value="designer">Designer</option>
-                <option value="seo_specialist">SEO Specialist</option>
-                <option value="monetization_expert">Monetization Expert</option>
-            </select>
-            <select id="action-type">
-                <option value="make_decision">Make Decision</option>
-                <option value="execute_task">Execute Task</option>
-            </select>
-            <input type="text" id="action-input" placeholder="Enter context or task">
-            <button id="perform-action">Perform Action</button>
-        </div>
-        
-        <div id="project-state">
-            <h3>Current Project State:</h3>
-            <pre id="state-display"></pre>
-        </div>
-
-        <div id="dashboard">
-            <h2>AI Performance Dashboard</h2>
-            <div id="aggregated-metrics">
-                <h3>Aggregated Metrics:</h3>
-                <ul id="metrics-list"></ul>
-            </div>
-            <div id="charts">
-                <canvas id="model-usage-chart"></canvas>
-                <canvas id="execution-time-chart"></canvas>
+    <div class="container">
+        <div class="sidebar">
+            <div class="logo">WebSplat AI PM</div>
+            <div class="nav-item active" data-view="dashboard">Dashboard</div>
+            <div class="nav-item" data-view="agents">Agents</div>
+            <div class="nav-item" data-view="performance">Performance</div>
+            <div class="nav-item" data-view="settings">Settings</div>
+            <div class="quick-actions">
+                <button class="btn" id="initialize-project">Initialize Project</button>
+                <button class="btn" id="next-step">Next Step</button>
             </div>
         </div>
-
-        <div id="agent-actions">
-            <h3>Agent Actions Log:</h3>
-            <div id="action-log"></div>
+        <div class="main-content">
+            <div id="dashboard-view">
+                <div class="card">
+                    <h2>Project State</h2>
+                    <pre id="project-state-display"></pre>
+                </div>
+                <div class="card">
+                    <h2>Progress Timeline</h2>
+                    <canvas id="progress-timeline-chart" class="chart"></canvas>
+                </div>
+                <div class="card">
+                    <h2>Recent Activities</h2>
+                    <div id="recent-activities"></div>
+                </div>
+            </div>
+            <div id="agents-view" style="display:none;">
+                <div class="card">
+                    <h2>AI Agents</h2>
+                    <div id="agent-cards"></div>
+                </div>
+            </div>
+            <div id="performance-view" style="display:none;">
+                <div class="card">
+                    <h2>Performance Metrics</h2>
+                    <canvas id="performance-metrics-chart" class="chart"></canvas>
+                </div>
+                <div class="card">
+                    <h2>Logs</h2>
+                    <div id="performance-logs"></div>
+                </div>
+            </div>
+            <div id="settings-view" style="display:none;">
+                <div class="card">
+                    <h2>AI Model Settings</h2>
+                    <form id="ai-settings-form">
+                        <label for="default-model">Default AI Model:</label>
+                        <select id="default-model" name="default-model">
+                            <option value="vertex">Vertex AI</option>
+                            <option value="o1">O1 Model</option>
+                        </select>
+                        <button type="submit" class="btn">Save Settings</button>
+                    </form>
+                </div>
+            </div>
         </div>
-
-        <div id="performance-metrics">
-            <h3>Performance Metrics:</h3>
-            <div id="metrics-log"></div>
-        </div>
-    </main>
-    <script>
-    let modelUsageChart, executionTimeChart;
-
-    async function fetchFromBackend(url, method = 'GET', body = null) {
-        const options = {
-            method,
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        };
-        if (body) options.body = JSON.stringify(body);
-        
-        const response = await fetch(url, options);
-        return await response.json();
-    }
-
-    async function initializeProject() {
-        try {
-            const data = await fetchFromBackend('/initialize-project', 'POST');
-            updateProjectState(data.project_state);
-            updatePerformanceLogs(data.performance_logs);
-            updateAggregatedMetrics(data.aggregated_metrics);
-            updateCharts(data.aggregated_metrics);
-            logAction('Project initialized');
-        } catch (error) {
-            console.error('Error initializing project:', error);
-            logAction('Error: Failed to initialize project');
-        }
-    }
-
-    async function nextStep() {
-        try {
-            const data = await fetchFromBackend('/next-step', 'POST');
-            updateProjectState(data.project_state);
-            updatePerformanceLogs(data.performance_logs);
-            updateAggregatedMetrics(data.aggregated_metrics);
-            updateCharts(data.aggregated_metrics);
-            logAction('Next step executed');
-        } catch (error) {
-            console.error('Error executing next step:', error);
-            logAction('Error: Failed to execute next step');
-        }
-    }
-
-    async function performAgentAction() {
-        const agentRole = document.getElementById('agent-role').value;
-        const actionType = document.getElementById('action-type').value;
-        const actionInput = document.getElementById('action-input').value;
-        const selectedModel = document.querySelector('input[name="ai-model"]:checked').value;
-        const forceModel = selectedModel === 'auto' ? null : selectedModel;
-
-        try {
-            const data = await fetchFromBackend('/agent-action', 'POST', {
-                action: actionType,
-                agent_role: agentRole,
-                context: actionInput,
-                task: actionInput,
-                force_model: forceModel
-            });
-            updateProjectState(await fetchFromBackend('/get-project-state'));
-            updatePerformanceLogs(data.performance_logs);
-            updateAggregatedMetrics(data.aggregated_metrics);
-            updateCharts(data.aggregated_metrics);
-            logAction(`${agentRole} ${actionType}: ${data.decision || data.result} (Using ${data.model_used})`);
-            logMetrics(data.metrics);
-        } catch (error) {
-            console.error('Error performing agent action:', error);
-            logAction(`Error: Failed to perform ${actionType} for ${agentRole}`);
-        }
-    }
-
-    function updateProjectState(state) {
-        document.getElementById('state-display').textContent = JSON.stringify(state, null, 2);
-    }
-
-    function logAction(action) {
-        const actionLog = document.getElementById('action-log');
-        const actionElement = document.createElement('p');
-        actionElement.textContent = new Date().toLocaleTimeString() + ': ' + action;
-        actionLog.insertBefore(actionElement, actionLog.firstChild);
-    }
-
-    function logMetrics(metrics) {
-        const metricsLog = document.getElementById('metrics-log');
-        const metricsElement = document.createElement('p');
-        metricsElement.textContent = `Execution Time: ${metrics.execution_time.toFixed(2)}s, Token Count: ${metrics.token_count}, Complexity: ${metrics.complexity.toFixed(2)}`;
-        metricsLog.insertBefore(metricsElement, metricsLog.firstChild);
-    }
-
-    function updatePerformanceLogs(logs) {
-        const metricsLog = document.getElementById('metrics-log');
-        metricsLog.innerHTML = '';
-        logs.forEach(log => {
-            const logElement = document.createElement('p');
-            logElement.textContent = `${log.agent} - ${log.action} (${log.model}): Execution Time: ${log.metrics.execution_time.toFixed(2)}s, Token Count: ${log.metrics.token_count}, Complexity: ${log.metrics.complexity.toFixed(2)}`;
-            metricsLog.appendChild(logElement);
-        });
-    }
-
-    function updateAggregatedMetrics(metrics) {
-        const metricsList = document.getElementById('metrics-list');
-        metricsList.innerHTML = '';
-        for (const [key, value] of Object.entries(metrics)) {
-            const listItem = document.createElement('li');
-            listItem.textContent = `${key}: ${typeof value === 'number' ? value.toFixed(2) : value}`;
-            metricsList.appendChild(listItem);
-        }
-    }
-
-    function updateCharts(metrics) {
-        updateModelUsageChart(metrics);
-        updateExecutionTimeChart(metrics);
-    }
-
-    function updateModelUsageChart(metrics) {
-        const ctx = document.getElementById('model-usage-chart').getContext('2d');
-        if (modelUsageChart) {
-            modelUsageChart.destroy();
-        }
-        modelUsageChart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: ['o1 Model', 'Vertex AI'],
-                datasets: [{
-                    data: [metrics.o1_calls, metrics.vertex_calls],
-                    backgroundColor: ['#FF6384', '#36A2EB'],
-                }]
-            },
-            options: {
-                responsive: true,
-                title: {
-                    display: true,
-                    text: 'AI Model Usage'
-                }
-            }
-        });
-    }
-
-    function updateExecutionTimeChart(metrics) {
-        const ctx = document.getElementById('execution-time-chart').getContext('2d');
-        if (executionTimeChart) {
-            executionTimeChart.destroy();
-        }
-        executionTimeChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['Average Execution Time'],
-                datasets: [{
-                    label: 'Seconds',
-                    data: [metrics.average_execution_time],
-                    backgroundColor: '#4BC0C0',
-                }]
-            },
-            options: {
-                responsive: true,
-                title: {
-                    display: true,
-                    text: 'Average Execution Time'
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
-    }
-
-    document.getElementById('initialize-project').addEventListener('click', initializeProject);
-    document.getElementById('next-step').addEventListener('click', nextStep);
-    document.getElementById('perform-action').addEventListener('click', performAgentAction);
-
-    // Initial project state load
-    fetchFromBackend('/dashboard-data').then(data => {
-        updateProjectState(data.project_state);
-        updatePerformanceLogs(data.performance_logs);
-        updateAggregatedMetrics(data.aggregated_metrics);
-        updateCharts(data.aggregated_metrics);
-    });
-    </script>
+    </div>
+    <div class="loading" id="loading-indicator">Loading</div>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
