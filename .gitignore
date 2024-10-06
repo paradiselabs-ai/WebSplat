@@ -1,4 +1,30 @@
+<<<<<<< HEAD
+# Dependency directories
+node_modules/
+webdev-env/
+websplat-env/
+WebSplat.code-workspace/
+# Environment variables
+.env
+
+# Build outputs
+build/
+dist/
+
+# IDE and editor files
+.vscode/
+*.swp
+*.swo
+.idea/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Python cache files
+=======
 # Byte-compiled / optimized / DLL files
+>>>>>>> 31384c10168eb9dd1497e6d4f548aff2158f0eb2
 __pycache__/
 *.py[cod]
 *$py.class
