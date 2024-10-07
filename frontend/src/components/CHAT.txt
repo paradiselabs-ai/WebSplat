@@ -1,0 +1,21 @@
+ Thank you for reminding me to review the devNotes. After examining the devNotes, I realize we need to focus more on the AI agent system and its integration with the frontend. Let's update our approach to align better with the project goals and best practices outlined in the devNotes.
+
+Here's what we should focus on:
+
+Implement a hierarchical AI agent system with O1 and Vertex AI as the main reasoning/brain.
+Create a more robust state management system to handle the complex AI interactions.
+Integrate web search capabilities using Tavily or Perplexity for market research.
+Implement the adjustable autonomy and creativity meter for AI agents.
+Enhance the main chat interface to support the hierarchical AI agent workflow.
+Let's start by creating a new file for our AI agent system:
+
+if you are making HUGE changes to the frontend ... well have you SEE what the new front end renders into?
+
+So like in the new branch we can test things and see if they work, if they do and we like the changes we could integrate it to the main branch
+
+that way if the front end doesnt work or match you mean, then its in a different branch? 
+
+let me see if this deploys and lets you see the frontend. That's good! btw dont forget to activate the venv i almost did
+Got it!
+
+Make
