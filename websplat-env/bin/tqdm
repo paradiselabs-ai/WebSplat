@@ -1,5 +1,5 @@
 #!/bin/sh
-'''exec' "/Users/cooper/Desktop/AI_ML/Creating/ParadiseLabs/My AI Projects/Websplat/websplat-env/bin/python" "$0" "$@"
+'''exec' "/Users/cooper/Desktop/AI_ML/Creating/ParadiseLabs/My AI Projects/Websplat/websplat-env/bin/python3" "$0" "$@"
 ' '''
 # -*- coding: utf-8 -*-
 import re
