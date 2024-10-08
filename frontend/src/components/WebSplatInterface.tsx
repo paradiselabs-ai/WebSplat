@@ -6,7 +6,7 @@ import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { PanelLeftOpen, PanelRightOpen, Settings, Plus, Laptop, Smartphone } from 'lucide-react';
+import { PanelLeftOpen, PanelRightOpen, Settings, Plus, Laptop, Smartphone, Layout, DollarSign, Search, BarChart2, Cloud, FilePlus, PieChart } from 'lucide-react';
 
 interface Message {
   role: 'ai' | 'user';
@@ -16,7 +16,7 @@ interface Message {
 type PreviewMode = 'desktop' | 'mobile';
 
 const WebSplatInterface: React.FC = () => {
-  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [previewOpen, setPreviewOpen] = useState<boolean>(true);
   const [messages, setMessages] = useState<Message[]>([
     { role: 'ai', content: 'Hello! I\'m your AI assistant. How can I help you build your website today?' },
@@ -40,9 +40,9 @@ const WebSplatInterface: React.FC = () => {
   };
   
   return (
-    <div className="h-screen flex flex-col bg-background text-foreground">
+    <div className="h-screen flex flex-col bg-[#1C1C1C] text-[#888888]">
       {/* Top Bar */}
-      <header className="h-14 border-b flex items-center justify-between px-4">
+      <header className="h-14 border-b border-[#333333] flex items-center justify-between px-4 z-10">
         <div className="flex items-center space-x-4">
           <Button variant="ghost" size="icon" onClick={toggleSidebar}>
             <PanelLeftOpen className="h-5 w-5" />
@@ -65,95 +65,120 @@ const WebSplatInterface: React.FC = () => {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Sidebar */}
-        {sidebarOpen && (
-          <aside className="w-64 border-r p-4 flex flex-col">
-            <Button className="mb-4">
-              <Plus className="mr-2 h-4 w-4" /> New Website
-            </Button>
-            <ScrollArea className="flex-1">
-              <nav className="space-y-2">
-                <Button variant="ghost" className="w-full justify-start">UI Design</Button>
-                <Button variant="ghost" className="w-full justify-start">Monetization</Button>
-                <Button variant="ghost" className="w-full justify-start">SEO</Button>
-                <Button variant="ghost" className="w-full justify-start">Analytics</Button>
-                <Button variant="ghost" className="w-full justify-start">Deployment</Button>
-              </nav>
-            </ScrollArea>
-            <div className="mt-4">
-              <label htmlFor="autonomy-slider" className="block text-sm font-medium text-gray-700">
-                AI Autonomy Level: {autonomyLevel}%
-              </label>
-              <div className="flex items-center mt-2">
-                <input
-                  type="range"
-                  id="autonomy-slider"
-                  min="0"
-                  max="100"
-                  value={autonomyLevel}
-                  onChange={(e: ChangeEvent<HTMLInputElement>) => setAutonomyLevel(parseInt(e.target.value))}
-                  className="w-full"
-                />
-              </div>
+        <aside className={`w-64 border-r border-[#333333] p-4 flex flex-col bg-[#2A2A2A] text-[#888888] fixed h-full transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          <Button className="mb-4 bg-[#3A3A3A] text-[#999999] hover:bg-[#4A4A4A]">
+            <Plus className="mr-2 h-4 w-4" /> New Website
+          </Button>
+          <ScrollArea className="flex-1">
+            <nav className="space-y-2">
+              <Button variant="ghost" className="w-full justify-start hover:bg-[#3A3A3A]">
+                <Layout className="mr-2 h-4 w-4 text-[#888888]" />
+                UI Design
+              </Button>
+              <Button variant="ghost" className="w-full justify-start hover:bg-[#3A3A3A]">
+                <DollarSign className="mr-2 h-4 w-4 text-[#888888]" />
+                Monetization
+              </Button>
+              <Button variant="ghost" className="w-full justify-start hover:bg-[#3A3A3A]">
+                <Search className="mr-2 h-4 w-4 text-[#888888]" />
+                SEO
+              </Button>
+              <Button variant="ghost" className="w-full justify-start hover:bg-[#3A3A3A]">
+                <BarChart2 className="mr-2 h-4 w-4 text-[#888888]" />
+                Analytics
+              </Button>
+              <Button variant="ghost" className="w-full justify-start hover:bg-[#3A3A3A]">
+                <Cloud className="mr-2 h-4 w-4 text-[#888888]" />
+                Deployment
+              </Button>
+            </nav>
+          </ScrollArea>
+          <div className="mt-4">
+            <label htmlFor="autonomy-slider" className="block text-sm font-medium">
+              AI Autonomy Level: {autonomyLevel}%
+            </label>
+            <div className="flex items-center mt-2">
+              <input
+                type="range"
+                id="autonomy-slider"
+                min="0"
+                max="100"
+                value={autonomyLevel}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setAutonomyLevel(parseInt(e.target.value))}
+                className="w-full"
+              />
             </div>
-          </aside>
-        )}
+          </div>
+        </aside>
 
         {/* Main Content */}
-        <main className="flex-1 flex flex-col overflow-hidden">
+        <main className={`flex-1 flex flex-col overflow-hidden bg-[#3A3A3A] text-[#999999] border-2 border-[#333333] transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
           <ScrollArea className="flex-1 p-4">
             {messages.map((message: Message, index: number) => (
-              <div key={index} className={`mb-4 ${message.role === 'ai' ? 'text-blue-600' : 'text-green-600'}`}>
+              <div key={index} className={`mb-4 ${message.role === 'ai' ? 'bg-[#4A4A4A] text-[#BBBBBB] p-2 rounded' : 'bg-[#2A2A2A] text-[#999999] p-2 rounded'}`}>
                 <strong>{message.role === 'ai' ? 'AI:' : 'You:'}</strong> {message.content}
               </div>
             ))}
           </ScrollArea>
-          <div className="p-4 border-t">
+          <div className="p-4 border-t border-[#333333]">
             <form className="flex space-x-2" onSubmit={handleSendMessage}>
               <Input
                 placeholder="Describe your website idea or ask for assistance"
-                className="flex-1"
+                className="flex-1 bg-[#2A2A2A] text-[#999999]"
                 value={inputMessage}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setInputMessage(e.target.value)}
               />
-              <Button type="submit">Send</Button>
+              <Button type="submit" className="bg-[#3A3A3A] text-[#999999] hover:bg-[#4A4A4A]">Send</Button>
             </form>
+            <div className="flex mt-2 space-x-2">
+              <Button className="bg-[#3A3A3A] text-[#999999] hover:bg-[#4A4A4A]">
+                <FilePlus className="mr-2 h-4 w-4" />
+                New Page
+              </Button>
+              <Button className="bg-[#3A3A3A] text-[#999999] hover:bg-[#4A4A4A]">
+                <Search className="mr-2 h-4 w-4" />
+                Add SEO
+              </Button>
+              <Button className="bg-[#3A3A3A] text-[#999999] hover:bg-[#4A4A4A]">
+                <PieChart className="mr-2 h-4 w-4" />
+                View Analytics
+              </Button>
+            </div>
           </div>
         </main>
 
         {/* Real-time Preview Panel */}
         {previewOpen && (
-          <aside className="w-96 border-l flex flex-col">
-            <div className="h-14 border-b flex items-center justify-between px-4">
+          <aside className="w-96 border-l border-[#333333] flex flex-col bg-[#2A2A2A] text-[#888888]">
+            <div className="h-14 border-b border-[#333333] flex items-center justify-between px-4">
               <h2 className="font-semibold">Real-time Preview</h2>
               <div className="flex space-x-2">
                 <Button
                   variant={previewMode === 'desktop' ? 'default' : 'ghost'}
-                  size="sm"
+                  size="icon"
                   onClick={() => setPreviewMode('desktop')}
                 >
-                  <Laptop className="h-4 w-4 mr-1" /> Desktop
+                  <Laptop className="h-4 w-4" />
                 </Button>
                 <Button
                   variant={previewMode === 'mobile' ? 'default' : 'ghost'}
-                  size="sm"
+                  size="icon"
                   onClick={() => setPreviewMode('mobile')}
                 >
-                  <Smartphone className="h-4 w-4 mr-1" /> Mobile
+                  <Smartphone className="h-4 w-4" />
                 </Button>
               </div>
             </div>
             <div className="flex-1 p-4 overflow-auto">
               <div
-                className={`border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 ${
+                className={`border-2 border-dashed border-[#333333] rounded-lg flex items-center justify-center ${
                   previewMode === 'desktop' ? 'w-full h-full' : 'w-1/2 h-3/4 mx-auto'
                 }`}
               >
-                {previewMode === 'desktop' ? 'Desktop Preview' : 'Mobile Preview'}
-                <br />
-                (Real-time updates would be shown here)
+                Your Design Here
               </div>
             </div>
-            <div className="p-2 text-sm text-gray-500 text-center">
+            <div className="p-2 text-sm text-[#777777] text-center">
               Note: In a real implementation, this preview would update live as changes are made to the website design.
             </div>
           </aside>
