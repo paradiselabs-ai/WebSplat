@@ -126,8 +126,7 @@ ENV/
 .vscode/
 .idea/
 
-# Project-specific
-claudeDev_docs/
+
 # Replit specific
 .replit
 replit.nix
@@ -135,8 +134,7 @@ replit.nix
 # Miscellaneous
 *.bak
 *.cache
-*.origclaudeDev_docs/
-*claudeDev_docs/
+
 
 .pythonlibs/
 .upm/
