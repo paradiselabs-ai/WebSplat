@@ -1,31 +1,42 @@
-import React, { useState } from 'react';
+"use client";
+
+import React, { useState, FormEvent, ChangeEvent } from 'react';
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { PanelLeftOpen, PanelRightOpen, Settings, Plus, Laptop, Smartphone, Monitor, Sliders } from 'lucide-react';
+import { PanelLeftOpen, PanelRightOpen, Settings, Plus, Laptop, Smartphone } from 'lucide-react';
+
+interface Message {
+  role: 'ai' | 'user';
+  content: string;
+}
+
+type PreviewMode = 'desktop' | 'mobile';
 
 const WebSplatInterface: React.FC = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [previewOpen, setPreviewOpen] = useState(true);
-  const [messages, setMessages] = useState([
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
+  const [previewOpen, setPreviewOpen] = useState<boolean>(true);
+  const [messages, setMessages] = useState<Message[]>([
     { role: 'ai', content: 'Hello! I\'m your AI assistant. How can I help you build your website today?' },
     { role: 'user', content: 'I want to create a landing page for my new product.' },
     { role: 'ai', content: 'Great! Let\'s start by defining the main sections of your landing page. What\'s your product about?' },
   ]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [autonomyLevel, setAutonomyLevel] = useState(50);
+  const [inputMessage, setInputMessage] = useState<string>('');
+  const [autonomyLevel, setAutonomyLevel] = useState<number>(50);
+  const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
 
   const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const togglePreview = () => setPreviewOpen(!previewOpen);
 
-  const handleSendMessage = (e: React.FormEvent) => {
+  const handleSendMessage = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (inputMessage.trim() !== '') {
       setMessages([...messages, { role: 'user', content: inputMessage }]);
       setInputMessage('');
       // TODO: Send message to backend and handle AI response
+    }
   };
   
   return (
@@ -70,20 +81,18 @@ const WebSplatInterface: React.FC = () => {
             </ScrollArea>
             <div className="mt-4">
               <label htmlFor="autonomy-slider" className="block text-sm font-medium text-gray-700">
-                AI Autonomy Level
+                AI Autonomy Level: {autonomyLevel}%
               </label>
               <div className="flex items-center mt-2">
-                <Sliders className="h-4 w-4 mr-2" />
                 <input
                   type="range"
                   id="autonomy-slider"
                   min="0"
                   max="100"
                   value={autonomyLevel}
-                  onChange={(e) => setAutonomyLevel(parseInt(e.target.value))}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setAutonomyLevel(parseInt(e.target.value))}
                   className="w-full"
                 />
-                <span className="ml-2 text-sm text-gray-500">{autonomyLevel}%</span>
               </div>
             </div>
           </aside>
@@ -92,7 +101,7 @@ const WebSplatInterface: React.FC = () => {
         {/* Main Content */}
         <main className="flex-1 flex flex-col overflow-hidden">
           <ScrollArea className="flex-1 p-4">
-            {messages.map((message, index) => (
+            {messages.map((message: Message, index: number) => (
               <div key={index} className={`mb-4 ${message.role === 'ai' ? 'text-blue-600' : 'text-green-600'}`}>
                 <strong>{message.role === 'ai' ? 'AI:' : 'You:'}</strong> {message.content}
               </div>
@@ -101,47 +110,52 @@ const WebSplatInterface: React.FC = () => {
           <div className="p-4 border-t">
             <form className="flex space-x-2" onSubmit={handleSendMessage}>
               <Input
-                placeholder="Type your message here..."
+                placeholder="Describe your website idea or ask for assistance"
                 className="flex-1"
                 value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setInputMessage(e.target.value)}
               />
               <Button type="submit">Send</Button>
             </form>
           </div>
         </main>
 
-        {/* Preview Panel */}
+        {/* Real-time Preview Panel */}
         {previewOpen && (
           <aside className="w-96 border-l flex flex-col">
             <div className="h-14 border-b flex items-center justify-between px-4">
-              <h2 className="font-semibold">Preview</h2>
-              <Button variant="ghost" size="icon" onClick={togglePreview}>
-                <PanelRightOpen className="h-5 w-5" />
-              </Button>
+              <h2 className="font-semibold">Real-time Preview</h2>
+              <div className="flex space-x-2">
+                <Button
+                  variant={previewMode === 'desktop' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setPreviewMode('desktop')}
+                >
+                  <Laptop className="h-4 w-4 mr-1" /> Desktop
+                </Button>
+                <Button
+                  variant={previewMode === 'mobile' ? 'default' : 'ghost'}
+                  size="sm"
+                  onClick={() => setPreviewMode('mobile')}
+                >
+                  <Smartphone className="h-4 w-4 mr-1" /> Mobile
+                </Button>
+              </div>
             </div>
-            <Tabs defaultValue="desktop" className="flex-1 flex flex-col">
-              <TabsList className="w-full justify-start px-4 py-2 border-b">
-                <TabsTrigger value="desktop"><Laptop className="mr-2 h-4 w-4" /> Desktop</TabsTrigger>
-                <TabsTrigger value="tablet"><Smartphone className="mr-2 h-4 w-4" /> Tablet</TabsTrigger>
-                <TabsTrigger value="mobile"><Monitor className="mr-2 h-4 w-4" /> Mobile</TabsTrigger>
-              </TabsList>
-              <TabsContent value="desktop" className="flex-1 p-4">
-                <div className="w-full h-full border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-                  Desktop Preview
-                </div>
-              </TabsContent>
-              <TabsContent value="tablet" className="flex-1 p-4">
-                <div className="w-3/4 h-full mx-auto border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-                  Tablet Preview
-                </div>
-              </TabsContent>
-              <TabsContent value="mobile" className="flex-1 p-4">
-                <div className="w-1/2 h-full mx-auto border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400">
-                  Mobile Preview
-                </div>
-              </TabsContent>
-            </Tabs>
+            <div className="flex-1 p-4 overflow-auto">
+              <div
+                className={`border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-400 ${
+                  previewMode === 'desktop' ? 'w-full h-full' : 'w-1/2 h-3/4 mx-auto'
+                }`}
+              >
+                {previewMode === 'desktop' ? 'Desktop Preview' : 'Mobile Preview'}
+                <br />
+                (Real-time updates would be shown here)
+              </div>
+            </div>
+            <div className="p-2 text-sm text-gray-500 text-center">
+              Note: In a real implementation, this preview would update live as changes are made to the website design.
+            </div>
           </aside>
         )}
       </div>
