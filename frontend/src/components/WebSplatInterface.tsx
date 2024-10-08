@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, FormEvent, ChangeEvent } from 'react';
+import React, { useState, FormEvent, ChangeEvent, useEffect } from 'react';
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { PanelLeftOpen, PanelRightOpen, Settings, Plus, Laptop, Smartphone, Layout, DollarSign, Search, BarChart2, Cloud, FilePlus, PieChart } from 'lucide-react';
+import { PanelRightOpen, Settings, Plus, Laptop, Smartphone, Layout, DollarSign, Search, BarChart2, Cloud, FilePlus, PieChart, Edit2, ArrowUp } from 'lucide-react';
 
 interface Message {
   role: 'ai' | 'user';
@@ -17,7 +17,7 @@ type PreviewMode = 'desktop' | 'mobile';
 
 const WebSplatInterface: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
-  const [previewOpen, setPreviewOpen] = useState<boolean>(true);
+  const [previewOpen, setPreviewOpen] = useState<boolean>(false);
   const [messages, setMessages] = useState<Message[]>([
     { role: 'ai', content: 'Hello! I\'m your AI assistant. How can I help you build your website today?' },
     { role: 'user', content: 'I want to create a landing page for my new product.' },
@@ -26,163 +26,261 @@ const WebSplatInterface: React.FC = () => {
   const [inputMessage, setInputMessage] = useState<string>('');
   const [autonomyLevel, setAutonomyLevel] = useState<number>(50);
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
+  const [cursorPosition, setCursorPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [projectName, setProjectName] = useState<string>('Untitled Project');
+  const [isEditingProjectName, setIsEditingProjectName] = useState<boolean>(false);
+  const [isHoveringProjectName, setIsHoveringProjectName] = useState<boolean>(false);
+  const [isSending, setIsSending] = useState<boolean>(false);
 
-  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
   const togglePreview = () => setPreviewOpen(!previewOpen);
 
   const handleSendMessage = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (inputMessage.trim() !== '') {
+      setIsSending(true);
       setMessages([...messages, { role: 'user', content: inputMessage }]);
       setInputMessage('');
-      // TODO: Send message to backend and handle AI response
+      // Simulating a delay for the sending animation
+      setTimeout(() => {
+        setIsSending(false);
+        // TODO: Send message to backend and handle AI response
+      }, 1000);
     }
   };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setCursorPosition({ x: e.clientX, y: e.clientY });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
+
+  useEffect(() => {
+    const windowHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
+    const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
+    const tolerance = 50; // Reduced tolerance for triggering
+
+    if ((cursorPosition.x <= tolerance && cursorPosition.y >= windowHeight / 2 - tolerance && cursorPosition.y <= windowHeight / 2 + tolerance) || 
+        (cursorPosition.x <= tolerance && cursorPosition.y >= windowHeight - tolerance)) {
+      setSidebarOpen(true);
+    } else if (cursorPosition.x > 300 && sidebarOpen) {
+      setSidebarOpen(false);
+    }
+  }, [cursorPosition, sidebarOpen]);
+
+  const gradientStyle = {
+    background: `linear-gradient(to right, rgba(42, 42, 42, ${Math.max(0, 1 - cursorPosition.x / 300)}) 0%, rgba(42, 42, 42, 0) 100%)`,
+    opacity: typeof window !== 'undefined' && Math.abs(cursorPosition.y - window.innerHeight / 2) <= 100 ? 1 : 0,
+  };
+
+  const handleProjectNameChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setProjectName(e.target.value);
+  };
+
+  const handleProjectNameBlur = () => {
+    setIsEditingProjectName(false);
+  };
+
+  const handleAutonomyLevelChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setAutonomyLevel(parseInt(e.target.value));
+  };
+
+  const sidebarItems = [
+    { name: 'UI Design', icon: Layout },
+    { name: 'Monetization', icon: DollarSign },
+    { name: 'SEO', icon: Search },
+    { name: 'Analytics', icon: BarChart2 },
+    { name: 'Deployment', icon: Cloud },
+  ];
   
   return (
-    <div className="h-screen flex flex-col bg-[#1C1C1C] text-[#888888]">
+    <div className="h-screen flex flex-col bg-[#363533] text-[#888888]">
       {/* Top Bar */}
-      <header className="h-14 border-b border-[#333333] flex items-center justify-between px-4 z-10">
+      <header className="h-14 flex items-center justify-between px-4 z-10 bg-gradient-to-b from-[#2A2A2A] to-[#363533]">
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" onClick={toggleSidebar}>
-            <PanelLeftOpen className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-bold">WebSplat - AI-Powered Web Development</h1>
+          <span className="text-sm font-semibold text-[#888888]">WebSplat</span>
+        </div>
+        <div className="flex-1 flex justify-center items-center">
+          {isEditingProjectName ? (
+            <Input
+              value={projectName}
+              onChange={handleProjectNameChange}
+              onBlur={handleProjectNameBlur}
+              className="max-w-xs text-center bg-transparent border-none text-[#888888] focus:ring-0"
+              autoFocus
+            />
+          ) : (
+            <div
+              className="relative"
+              onMouseEnter={() => setIsHoveringProjectName(true)}
+              onMouseLeave={() => setIsHoveringProjectName(false)}
+            >
+              <h1
+                className={`text-xl font-bold text-[#888888] cursor-pointer hover:text-[#AAAAAA] transition-colors duration-300 ${projectName === 'Untitled Project' ? 'animate-pulse' : ''}`}
+                onClick={() => setIsEditingProjectName(true)}
+              >
+                {projectName}
+              </h1>
+              {isHoveringProjectName && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setIsEditingProjectName(true)}
+                  className="absolute -right-8 top-1/2 transform -translate-y-1/2"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+          )}
         </div>
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon">
-            <Settings className="h-5 w-5" />
+          <Button variant="ghost" size="icon" className="group">
+            <Settings className="h-5 w-5 transition-transform duration-300 group-hover:rotate-180" />
           </Button>
-          <Button variant="ghost" size="icon" onClick={togglePreview}>
-            <PanelRightOpen className="h-5 w-5" />
-          </Button>
-          <Avatar>
-            <AvatarImage src="https://github.com/shadcn.png" alt="User" />
-            <AvatarFallback>CN</AvatarFallback>
+          <Avatar className="h-8 w-8 rounded-full overflow-hidden">
+            <AvatarImage src="https://github.com/shadcn.png" alt="User" className="rounded-full" />
+            <AvatarFallback className="rounded-full">CN</AvatarFallback>
           </Avatar>
         </div>
       </header>
 
       <div className="flex-1 flex overflow-hidden">
+        {/* Gradient overlay */}
+        <div
+          className="fixed top-14 left-0 w-64 h-[calc(100%-5rem)] mt-4 ml-4 pointer-events-none z-20 transition-opacity duration-300 rounded-2xl"
+          style={gradientStyle}
+        ></div>
+
         {/* Sidebar */}
-        <aside className={`w-64 border-r border-[#333333] p-4 flex flex-col bg-[#2A2A2A] text-[#888888] fixed h-full transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
-          <Button className="mb-4 bg-[#3A3A3A] text-[#999999] hover:bg-[#4A4A4A]">
+        <aside className={`w-64 p-4 flex flex-col bg-[#2A2A2A] text-[#888888] fixed h-[calc(100%-5rem)] mt-4 ml-4 mb-6 rounded-2xl transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} z-30`}>
+          <Button className="mb-6 bg-[#3A3A3A] text-[#999999] hover:bg-[#4A4A4A] transition-all duration-300 transform hover:scale-105">
             <Plus className="mr-2 h-4 w-4" /> New Website
           </Button>
           <ScrollArea className="flex-1">
-            <nav className="space-y-2">
-              <Button variant="ghost" className="w-full justify-start hover:bg-[#3A3A3A]">
-                <Layout className="mr-2 h-4 w-4 text-[#888888]" />
-                UI Design
-              </Button>
-              <Button variant="ghost" className="w-full justify-start hover:bg-[#3A3A3A]">
-                <DollarSign className="mr-2 h-4 w-4 text-[#888888]" />
-                Monetization
-              </Button>
-              <Button variant="ghost" className="w-full justify-start hover:bg-[#3A3A3A]">
-                <Search className="mr-2 h-4 w-4 text-[#888888]" />
-                SEO
-              </Button>
-              <Button variant="ghost" className="w-full justify-start hover:bg-[#3A3A3A]">
-                <BarChart2 className="mr-2 h-4 w-4 text-[#888888]" />
-                Analytics
-              </Button>
-              <Button variant="ghost" className="w-full justify-start hover:bg-[#3A3A3A]">
-                <Cloud className="mr-2 h-4 w-4 text-[#888888]" />
-                Deployment
-              </Button>
+            <nav className="space-y-3">
+              {sidebarItems.map((item, index) => (
+                <Button 
+                  key={index}
+                  variant="ghost" 
+                  className="w-full justify-start hover:bg-[#3A3A3A] transition-all duration-300 group"
+                >
+                  <div className="flex items-center w-full">
+                    <div className="bg-[#3A3A3A] p-2 rounded-lg mr-3 group-hover:bg-[#4A4A4A] transition-colors duration-300">
+                      <item.icon className="h-5 w-5 text-[#888888] group-hover:text-[#AAAAAA] transition-colors duration-300" />
+                    </div>
+                    <span className="text-[#888888] group-hover:text-[#AAAAAA] transition-colors duration-300">{item.name}</span>
+                  </div>
+                </Button>
+              ))}
             </nav>
           </ScrollArea>
-          <div className="mt-4">
-            <label htmlFor="autonomy-slider" className="block text-sm font-medium">
+          <div className="mt-6">
+            <label htmlFor="autonomy-slider" className="block text-sm font-medium mb-2">
               AI Autonomy Level: {autonomyLevel}%
             </label>
-            <div className="flex items-center mt-2">
+            <div className="relative">
               <input
                 type="range"
                 id="autonomy-slider"
                 min="0"
                 max="100"
                 value={autonomyLevel}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setAutonomyLevel(parseInt(e.target.value))}
-                className="w-full"
+                onChange={handleAutonomyLevelChange}
+                className="w-full appearance-none bg-[#4A4A4A] h-2 rounded-full outline-none cursor-pointer"
               />
+              <div 
+                className="absolute top-1/2 transform -translate-y-1/2 w-4 h-4 bg-[#A3512B] rounded-full cursor-pointer transition-all duration-200 hover:scale-110"
+                style={{ left: `calc(${autonomyLevel}% - 8px)` }}
+              ></div>
             </div>
           </div>
         </aside>
 
         {/* Main Content */}
-        <main className={`flex-1 flex flex-col overflow-hidden bg-[#3A3A3A] text-[#999999] border-2 border-[#333333] transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
-          <ScrollArea className="flex-1 p-4">
-            {messages.map((message: Message, index: number) => (
-              <div key={index} className={`mb-4 ${message.role === 'ai' ? 'bg-[#4A4A4A] text-[#BBBBBB] p-2 rounded' : 'bg-[#2A2A2A] text-[#999999] p-2 rounded'}`}>
-                <strong>{message.role === 'ai' ? 'AI:' : 'You:'}</strong> {message.content}
+        <main className={`flex-1 flex flex-col overflow-hidden bg-[#363533] text-[#999999] transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
+          <div className="flex-1 flex justify-center">
+            <div className="w-3/5 max-w-3xl">
+              <ScrollArea className="h-[calc(100vh-10rem)] mt-4">
+                {messages.map((message: Message, index: number) => (
+                  <div key={index} className={`mb-4 ${message.role === 'ai' ? 'bg-[#363634] text-[#E1E0DC] p-3 rounded-2xl' : 'bg-[#1C1B17] text-[#E0DFDD] p-3 rounded-2xl'}`}>
+                    {message.content}
+                  </div>
+                ))}
+              </ScrollArea>
+              <div className="mt-4 relative">
+                <form className="flex items-center space-x-2" onSubmit={handleSendMessage}>
+                  <div className="relative flex-1">
+                    <Input
+                      placeholder="Describe your website idea or ask for assistance"
+                      className="w-full bg-[#2A2A2A] text-[#E0DFDD] rounded-full pl-4 pr-12 py-2 focus:ring-2 focus:ring-[#A3512B] focus:border-transparent"
+                      value={inputMessage}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => setInputMessage(e.target.value)}
+                    />
+                    <Button
+                      type="submit"
+                      className={`absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#A3512B] text-white hover:bg-[#B5613B] transition-all duration-300 ${isSending ? 'animate-pulse' : ''} rounded-full w-8 h-8 flex items-center justify-center opacity-0 ${inputMessage.trim() !== '' ? 'opacity-100' : ''}`}
+                      disabled={isSending || inputMessage.trim() === ''}
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </form>
               </div>
-            ))}
-          </ScrollArea>
-          <div className="p-4 border-t border-[#333333]">
-            <form className="flex space-x-2" onSubmit={handleSendMessage}>
-              <Input
-                placeholder="Describe your website idea or ask for assistance"
-                className="flex-1 bg-[#2A2A2A] text-[#999999]"
-                value={inputMessage}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setInputMessage(e.target.value)}
-              />
-              <Button type="submit" className="bg-[#3A3A3A] text-[#999999] hover:bg-[#4A4A4A]">Send</Button>
-            </form>
-            <div className="flex mt-2 space-x-2">
-              <Button className="bg-[#3A3A3A] text-[#999999] hover:bg-[#4A4A4A]">
-                <FilePlus className="mr-2 h-4 w-4" />
-                New Page
-              </Button>
-              <Button className="bg-[#3A3A3A] text-[#999999] hover:bg-[#4A4A4A]">
-                <Search className="mr-2 h-4 w-4" />
-                Add SEO
-              </Button>
-              <Button className="bg-[#3A3A3A] text-[#999999] hover:bg-[#4A4A4A]">
-                <PieChart className="mr-2 h-4 w-4" />
-                View Analytics
-              </Button>
             </div>
           </div>
         </main>
 
+        {/* Real-time Preview Toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={togglePreview}
+          className="fixed top-1/2 right-0 transform -translate-y-1/2 z-40 bg-[#2A2A2A] hover:bg-[#3A3A3A] rounded-l-md"
+          title="Toggle Preview"
+        >
+          <PanelRightOpen className="h-5 w-5" />
+        </Button>
+
         {/* Real-time Preview Panel */}
-        {previewOpen && (
-          <aside className="w-96 border-l border-[#333333] flex flex-col bg-[#2A2A2A] text-[#888888]">
-            <div className="h-14 border-b border-[#333333] flex items-center justify-between px-4">
-              <h2 className="font-semibold">Real-time Preview</h2>
-              <div className="flex space-x-2">
-                <Button
-                  variant={previewMode === 'desktop' ? 'default' : 'ghost'}
-                  size="icon"
-                  onClick={() => setPreviewMode('desktop')}
-                >
-                  <Laptop className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant={previewMode === 'mobile' ? 'default' : 'ghost'}
-                  size="icon"
-                  onClick={() => setPreviewMode('mobile')}
-                >
-                  <Smartphone className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            <div className="flex-1 p-4 overflow-auto">
-              <div
-                className={`border-2 border-dashed border-[#333333] rounded-lg flex items-center justify-center ${
-                  previewMode === 'desktop' ? 'w-full h-full' : 'w-1/2 h-3/4 mx-auto'
-                }`}
+        <aside className={`w-96 flex flex-col bg-[#2A2A2A] text-[#888888] fixed right-0 top-14 bottom-4 rounded-l-2xl transition-transform duration-300 ease-in-out ${previewOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+          <div className="h-14 border-b border-[#333333] flex items-center justify-between px-4 rounded-tl-2xl">
+            <h2 className="font-semibold">Real-time Preview</h2>
+            <div className="flex space-x-2">
+              <Button
+                variant={previewMode === 'desktop' ? 'default' : 'ghost'}
+                size="icon"
+                onClick={() => setPreviewMode('desktop')}
               >
-                Your Design Here
-              </div>
+                <Laptop className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={previewMode === 'mobile' ? 'default' : 'ghost'}
+                size="icon"
+                onClick={() => setPreviewMode('mobile')}
+              >
+                <Smartphone className="h-4 w-4" />
+              </Button>
             </div>
-            <div className="p-2 text-sm text-[#777777] text-center">
-              Note: In a real implementation, this preview would update live as changes are made to the website design.
+          </div>
+          <div className="flex-1 p-4 overflow-auto">
+            <div
+              className={`border-2 border-dashed border-[#333333] rounded-lg flex items-center justify-center ${
+                previewMode === 'desktop' ? 'w-full h-full' : 'w-1/2 h-3/4 mx-auto'
+              }`}
+            >
+              Your Design Here
             </div>
-          </aside>
-        )}
+          </div>
+          <div className="p-2 text-sm text-[#777777] text-center rounded-bl-2xl">
+            Note: In a real implementation, this preview would update live as changes are made to the website design.
+          </div>
+        </aside>
       </div>
     </div>
   );
