@@ -7,6 +7,9 @@ import { ScrollArea } from "./ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { PanelRightOpen, Settings, Plus, Laptop, Smartphone, Layout, DollarSign, Search, BarChart2, Cloud, FilePlus, PieChart, Edit2, ArrowUp } from 'lucide-react';
+import mockAiResponse from './mockAiResponse';
+
+
 
 interface Message {
   role: 'ai' | 'user';
@@ -63,19 +66,64 @@ const WebSplatInterface: React.FC = () => {
 
   const togglePreview = () => setPreviewOpen(!previewOpen);
 
-  const handleSendMessage = (e: FormEvent<HTMLFormElement>) => {
+  const [isTyping, setIsTyping] = useState<boolean>(false);
+  const [currentAiMessage, setCurrentAiMessage] = useState<string>('');
+  const [responseIndex, setResponseIndex] = useState<number>(0);
+
+  const handleSendMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (inputMessage.trim() !== '') {
       setIsSending(true);
-      setMessages([...messages, { role: 'user', content: inputMessage }]);
+      setMessages(prevMessages => [...prevMessages, { role: 'user', content: inputMessage }]);
       setInputMessage('');
-      // Simulating a delay for the sending animation
-      setTimeout(() => {
-        setIsSending(false);
-        // TODO: Send message to backend and handle AI response
-      }, 1000);
+
+      // Simulate sending delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setIsSending(false);
+      setIsTyping(true);
+
+      let fullResponse = '';
+      let response = await mockAiResponse(responseIndex);
+
+      while (response !== null && !response.isComplete) {
+        if (response.word) {
+          fullResponse += response.word + ' ';
+          setCurrentAiMessage(fullResponse.trim());
+          
+          // Force a re-render to show the updated message
+          setMessages(prevMessages => [...prevMessages]);
+        }
+
+        // Wait for a short time to simulate typing speed
+        await new Promise(resolve => setTimeout(resolve, 50));
+        
+        response = await mockAiResponse(responseIndex);
+      }
+
+      if (response && response.isComplete) {
+        setMessages(prevMessages => [
+          ...prevMessages,
+          { role: 'ai', content: fullResponse.trim() }
+        ]);
+        
+        if (response.code) {
+          console.log('Generated Code:', response.code);
+          // TODO: Update your UI or state to display or use the generated code
+        }
+      }
+
+      setIsTyping(false);
+      setCurrentAiMessage('');
+      setResponseIndex(prevIndex => prevIndex + 1);
     }
   };
+
+  // Automatically trigger the next response when the AI finishes typing
+  useEffect(() => {
+    if (!isTyping && responseIndex > 0) {
+      handleSendMessage({ preventDefault: () => {} } as FormEvent<HTMLFormElement>);
+    }
+  }, [isTyping, responseIndex]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -217,40 +265,45 @@ const WebSplatInterface: React.FC = () => {
         </aside>
 
         {/* Main Content */}
-        <main className={`flex-1 flex flex-col overflow-hidden bg-[#2C2B28] text-[#999999] transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
-          <div className="flex-1 flex justify-center">
-            <div className="w-3/5 max-w-3xl">
-              <ScrollArea className="h-[calc(100vh-10rem)] mt-4">
-                {messages.map((message: Message, index: number) => (
-                  <div key={index} className={`mb-4 ${message.role === 'ai' ? 'bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl' : 'bg-[#21201C] text-[#E5E5E2] p-3 rounded-2xl'}`}>
-                    <p className={message.role === 'ai' ? 'font-tiempos text-base' : 'font-styrene text-[15px]'}>
-                      {message.content}
-                    </p>
-                  </div>
-                ))}
-              </ScrollArea>
-              <div className="mt-4 relative">
-                <form className="flex items-center space-x-2" onSubmit={handleSendMessage}>
-                  <div className="relative flex-1">
-                    <Input
-                      placeholder="Describe your website idea or ask for assistance"
-                      className="w-full bg-[#31312E] text-[#E5E5E2] rounded-full pl-4 pr-12 py-2 focus:ring-2 focus:ring-[#A3512B] focus:border-transparent placeholder-[#A6A39A]"
-                      value={inputMessage}
-                      onChange={(e: ChangeEvent<HTMLInputElement>) => setInputMessage(e.target.value)}
-                    />
-                    <Button
-                      type="submit"
-                      className={`absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#A3512B] text-white hover:bg-[#B5613B] transition-all duration-300 ${isSending ? 'animate-pulse' : ''} rounded-full w-8 h-8 flex items-center justify-center opacity-0 ${inputMessage.trim() !== '' ? 'opacity-100' : ''}`}
-                      disabled={isSending || inputMessage.trim() === ''}
-                    >
-                      <ArrowUp className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </form>
-              </div>
+      <main className={`flex-1 flex flex-col overflow-hidden bg-[#2C2B28] text-[#999999] transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
+        <div className="flex-1 flex justify-center">
+          <div className="w-3/5 max-w-3xl">
+            <ScrollArea className="h-[calc(100vh-10rem)] mt-4">
+              {messages.map((message: Message, index: number) => (
+                <div key={index} className={`mb-4 ${message.role === 'ai' ? 'bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl' : 'bg-[#21201C] text-[#E5E5E2] p-3 rounded-2xl'}`}>
+                  <p className={message.role === 'ai' ? 'font-tiempos text-base' : 'font-styrene text-[15px]'}>
+                    {message.content}
+                  </p>
+                </div>
+              ))}
+              {isTyping && (
+                <div className="mb-4 bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl">
+                  <p className="font-tiempos text-base">{currentAiMessage}</p>
+                </div>
+              )}
+            </ScrollArea>
+            <div className="mt-4 relative">
+              <form className="flex items-center space-x-2" onSubmit={handleSendMessage}>
+                <div className="relative flex-1">
+                  <Input
+                    placeholder="Describe your website idea or ask for assistance"
+                    className="w-full bg-[#31312E] text-[#E5E5E2] rounded-full pl-4 pr-12 py-2 focus:ring-2 focus:ring-[#A3512B] focus:border-transparent placeholder-[#A6A39A]"
+                    value={inputMessage}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setInputMessage(e.target.value)}
+                  />
+                  <Button
+                    type="submit"
+                    className={`absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#A3512B] text-white hover:bg-[#B5613B] transition-all duration-300 ${isSending ? 'animate-pulse' : ''} rounded-full w-8 h-8 flex items-center justify-center opacity-0 ${inputMessage.trim() !== '' ? 'opacity-100' : ''}`}
+                    disabled={isSending || inputMessage.trim() === ''}
+                  >
+                    <ArrowUp className="h-4 w-4" />
+                  </Button>
+                </div>
+              </form>
             </div>
           </div>
-        </main>
+        </div>
+      </main>
 
         {/* Real-time Preview Toggle */}
         <Button
