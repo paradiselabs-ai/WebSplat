@@ -2,39 +2,20 @@
 
 const mockResponses = [
     {
-        response: "Starting with the document type declaration and HTML tag:",
-        code: "<!DOCTYPE html>\n<html lang=\"en\">"
+        response: "Setting up the document structure, head, and starting the body with a background color:",
+        code: "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>The Ultimate Big Ass Website</title>\n  <style>\n    body {\n      background-color: #f0f8ff; /* Light blue background */\n      font-family: Arial, sans-serif;\n      line-height: 1.6;\n      color: #333;\n    }\n  </style>\n</head>\n<body>"
     },
     {
-        response: "Setting up the head with metadata and title:",
-        code: "<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>Big Ass Website</title>\n  <link rel=\"stylesheet\" href=\"style.css\">\n</head>"
+        response: "Adding the header, navigation, and main content sections:",
+        code: "  <header style=\"background-color: #4a90e2; color: white; padding: 1rem;\">\n    <h1>The Ultimate Big Ass Website</h1>\n    <nav>\n      <ul style=\"list-style: none; padding: 0;\">\n        <li style=\"display: inline; margin-right: 1rem;\"><a href=\"#home\" style=\"color: white; text-decoration: none;\">Home</a></li>\n        <li style=\"display: inline; margin-right: 1rem;\"><a href=\"#about\" style=\"color: white; text-decoration: none;\">About</a></li>\n        <li style=\"display: inline; margin-right: 1rem;\"><a href=\"#services\" style=\"color: white; text-decoration: none;\">Services</a></li>\n        <li style=\"display: inline;\"><a href=\"#contact\" style=\"color: white; text-decoration: none;\">Contact</a></li>\n      </ul>\n    </nav>\n  </header>\n\n  <main style=\"max-width: 800px; margin: 0 auto; padding: 2rem;\">\n    <section id=\"home\">\n      <h2>Welcome to Our Big Ass Website</h2>\n      <p>We offer everything you could possibly need, and then some!</p>\n    </section>\n\n    <section id=\"about\">\n      <h2>About Us</h2>\n      <p>We're a company that specializes in creating unnecessarily large websites with an excessive amount of content.</p>\n    </section>\n\n    <section id=\"services\">\n      <h2>Our Services</h2>\n      <ul>\n        <li>Oversized Web Design</li>\n        <li>Excessive Content Creation</li>\n        <li>Unnecessary Feature Implementation</li>\n        <li>Gratuitous Animation Addition</li>\n      </ul>\n    </section>\n\n    <section id=\"contact\">\n      <h2>Contact Us</h2>\n      <form>\n        <label for=\"name\">Name:</label><br>\n        <input type=\"text\" id=\"name\" name=\"name\" required><br>\n        <label for=\"email\">Email:</label><br>\n        <input type=\"email\" id=\"email\" name=\"email\" required><br>\n        <label for=\"message\">Message:</label><br>\n        <textarea id=\"message\" name=\"message\" required></textarea><br>\n        <input type=\"submit\" value=\"Send\" style=\"background-color: #4a90e2; color: white; border: none; padding: 0.5rem 1rem; cursor: pointer;\">\n      </form>\n    </section>\n  </main>"
     },
     {
-        response: "Opening the body and adding a header section:",
-        code: "<body>\n  <header>\n    <nav>\n      <ul>\n        <li><a href=\"#\">Home</a></li>\n        <li><a href=\"#\">About</a></li>\n        <li><a href=\"#\">Services</a></li>\n        <li><a href=\"#\">Contact</a></li>\n      </ul>\n    </nav>\n  </header>"
+        response: "Adding a footer with copyright information:",
+        code: "  <footer style=\"background-color: #4a90e2; color: white; text-align: center; padding: 1rem; margin-top: 2rem;\">\n    <p>&copy; 2023 The Ultimate Big Ass Website. All rights reserved.</p>\n  </footer>"
     },
     {
-        response: "Creating the main content area with a hero section:",
-        code: "<main>\n  <section id=\"hero\">\n    <h1>Welcome to the Big Ass Website</h1>\n    <p>This website is comprehensively large and has a lot of content.</p>\n    <button>Learn More</button>\n  </section>"
-    },
-    {
-        response: "Adding a features section to highlight key aspects:",
-        code: "<section id=\"features\">\n    <h2>Our Amazing Features</h2>\n    <div class=\"feature\">\n      <h3>Feature 1</h3>\n      <p>Description of Feature 1.</p>\n    </div>\n    <div class=\"feature\">\n      <h3>Feature 2</h3>\n      <p>Description of Feature 2.</p>\n    </div>\n    <div class=\"feature\">\n      <h3>Feature 3</h3>\n      <p>Description of Feature 3.</p>\n    </div>\n  </section>"
-    },
-
-
-    {
-        response: "Including a section for testimonials or reviews:",
-        code: "<section id=\"testimonials\">\n    <h2>What People Are Saying</h2>\n<blockquote>\"This website is truly big and impressive!\"<cite>- John Doe</cite></blockquote> \n<blockquote>\"So much content, I'm overwhelmed (in a good way)!\"<cite>- Jane Smith</cite></blockquote>\n  </section>"
-
-    },
-    {
-        response: "Adding a contact form for user interaction:",
-        code: "<section id=\"contact\">\n    <h2>Contact Us</h2>\n    <form>\n      <label for=\"name\">Name:</label>\n      <input type=\"text\" id=\"name\" name=\"name\"><br><br>\n      <label for=\"email\">Email:</label>\n      <input type=\"email\" id=\"email\" name=\"email\"><br><br>\n      <label for=\"message\">Message:</label>\n      <textarea id=\"message\" name=\"message\"></textarea><br><br>\n      <button type=\"submit\">Submit</button>\n    </form>\n  </section>"
-    },
-    {
-        response: "Closing the main, adding a footer, and closing the body and HTML tags:",
-        code: "</main>\n  <footer>\n    <p>© 2023 Big Ass Website</p>\n  </footer>\n</body>\n</html>"
+        response: "Closing the body and HTML tags:",
+        code: "</body>\n</html>"
     }
 ];
   
