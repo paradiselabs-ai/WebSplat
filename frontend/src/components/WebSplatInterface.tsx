@@ -1,15 +1,13 @@
 "use client";
 
-import React, { useState, FormEvent, ChangeEvent, useEffect } from 'react';
+import React, { useState, FormEvent, ChangeEvent, useEffect, useRef } from 'react';
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { PanelRightOpen, Settings, Plus, Laptop, Smartphone, Layout, DollarSign, Search, BarChart2, Cloud, FilePlus, PieChart, Edit2, ArrowUp } from 'lucide-react';
+import { PanelLeftOpen, PanelRightOpen, Settings, Plus, Laptop, Smartphone, Layout, DollarSign, Search, BarChart2, Cloud, FilePlus, PieChart, Edit2, ArrowUp } from 'lucide-react';
 import mockAiResponse from './mockAiResponse';
-
-
 
 interface Message {
   role: 'ai' | 'user';
@@ -47,14 +45,51 @@ const MinimalAutonomyControl: React.FC<{
   );
 };
 
+const LivePreview: React.FC<{ html: string; mode: PreviewMode }> = ({ html, mode }) => {
+  return (
+    <div className={`w-full h-full overflow-auto ${mode === 'mobile' ? 'max-w-[375px] mx-auto' : ''}`}>
+      <div className={`border-2 border-[#444444] rounded-lg overflow-hidden ${mode === 'mobile' ? 'w-[375px] h-[667px]' : 'w-full h-full'}`}>
+        <iframe
+          srcDoc={html}
+          title="Live Preview"
+          className="w-full h-full border-0"
+          style={{ transform: mode === 'mobile' ? 'scale(0.75)' : 'none', transformOrigin: 'top left' }}
+        />
+      </div>
+    </div>
+  );
+};
+
+const TypewriterText: React.FC<{ text: string }> = ({ text }) => {
+  const [displayText, setDisplayText] = useState('');
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    setDisplayText('');
+    let i = 0;
+    intervalRef.current = setInterval(() => {
+      if (i < text.length) {
+        setDisplayText((prev) => prev + text.charAt(i));
+        i++;
+      } else if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    }, 50);
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [text]);
+
+  return <p className="text-[#AAAAAA] text-lg">{displayText}</p>;
+};
+
 const WebSplatInterface: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [previewOpen, setPreviewOpen] = useState<boolean>(false);
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'ai', content: 'Hello! I\'m your AI assistant. How can I help you build your website today?' },
-    { role: 'user', content: 'I want to create a landing page for my new product.' },
-    { role: 'ai', content: 'Great! Let\'s start by defining the main sections of your landing page. What\'s your product about?' },
-  ]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState<string>('');
   const [autonomyLevel, setAutonomyLevel] = useState<number>(50);
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
@@ -63,12 +98,14 @@ const WebSplatInterface: React.FC = () => {
   const [isEditingProjectName, setIsEditingProjectName] = useState<boolean>(false);
   const [isHoveringProjectName, setIsHoveringProjectName] = useState<boolean>(false);
   const [isSending, setIsSending] = useState<boolean>(false);
-
-  const togglePreview = () => setPreviewOpen(!previewOpen);
-
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const [currentAiMessage, setCurrentAiMessage] = useState<string>('');
   const [responseIndex, setResponseIndex] = useState<number>(0);
+  const [generatedHtml, setGeneratedHtml] = useState<string>('');
+  const [isFirstInteraction, setIsFirstInteraction] = useState<boolean>(true);
+  const [isInputBarMoving, setIsInputBarMoving] = useState<boolean>(false);
+
+  const togglePreview = () => setPreviewOpen(!previewOpen);
 
   const handleSendMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -76,6 +113,13 @@ const WebSplatInterface: React.FC = () => {
       setIsSending(true);
       setMessages(prevMessages => [...prevMessages, { role: 'user', content: inputMessage }]);
       setInputMessage('');
+      if (isFirstInteraction) {
+        setIsInputBarMoving(true);
+        setTimeout(() => {
+          setIsFirstInteraction(false);
+          setIsInputBarMoving(false);
+        }, 500); // Duration of the animation
+      }
 
       // Simulate sending delay
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -112,7 +156,7 @@ const WebSplatInterface: React.FC = () => {
         
         if (response.code) {
           console.log('Generated Code:', response.code);
-          // TODO: Update your UI or state to display or use the generated code
+          setGeneratedHtml(prevHtml => prevHtml + response.code);
         }
       }
 
@@ -183,37 +227,39 @@ const WebSplatInterface: React.FC = () => {
           <span className="text-sm font-semibold text-[#888888]">WebSplat</span>
         </div>
         <div className="flex-1 flex justify-center items-center">
-          {isEditingProjectName ? (
-            <Input
-              value={projectName}
-              onChange={handleProjectNameChange}
-              onBlur={handleProjectNameBlur}
-              className="max-w-xs text-center bg-transparent border-none text-[#888888] focus:ring-0"
-              autoFocus
-            />
-          ) : (
-            <div
-              className="relative"
-              onMouseEnter={() => setIsHoveringProjectName(true)}
-              onMouseLeave={() => setIsHoveringProjectName(false)}
-            >
-              <h1
-                className={`text-xl font-bold text-[#888888] cursor-pointer hover:text-[#AAAAAA] transition-colors duration-300 ${projectName === 'Untitled Project' ? 'animate-pulse' : ''}`}
-                onClick={() => setIsEditingProjectName(true)}
+          {!isFirstInteraction && (
+            isEditingProjectName ? (
+              <Input
+                value={projectName}
+                onChange={handleProjectNameChange}
+                onBlur={handleProjectNameBlur}
+                className="max-w-xs text-center bg-transparent border-none text-[#888888] focus:ring-0"
+                autoFocus
+              />
+            ) : (
+              <div
+                className="relative"
+                onMouseEnter={() => setIsHoveringProjectName(true)}
+                onMouseLeave={() => setIsHoveringProjectName(false)}
               >
-                {projectName}
-              </h1>
-              {isHoveringProjectName && (
-                <Button
-                  variant="ghost"
-                  size="icon"
+                <h1
+                  className={`text-xl font-bold text-[#888888] cursor-pointer hover:text-[#AAAAAA] transition-colors duration-300 ${projectName === 'Untitled Project' ? 'animate-pulse' : ''}`}
                   onClick={() => setIsEditingProjectName(true)}
-                  className="absolute -right-8 top-1/2 transform -translate-y-1/2"
                 >
-                  <Edit2 className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+                  {projectName}
+                </h1>
+                {isHoveringProjectName && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setIsEditingProjectName(true)}
+                    className="absolute -right-8 top-1/2 transform -translate-y-1/2"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+            )
           )}
         </div>
         <div className="flex items-center space-x-4">
@@ -269,45 +315,56 @@ const WebSplatInterface: React.FC = () => {
         </aside>
 
         {/* Main Content */}
-      <main className={`flex-1 flex flex-col overflow-hidden bg-[#2C2B28] text-[#999999] transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
-        <div className="flex-1 flex justify-center">
-          <div className="w-3/5 max-w-3xl">
-            <ScrollArea className="h-[calc(100vh-10rem)] mt-4">
-              {messages.map((message: Message, index: number) => (
-                <div key={index} className={`mb-4 ${message.role === 'ai' ? 'bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl' : 'bg-[#21201C] text-[#E5E5E2] p-3 rounded-2xl'}`}>
-                  <p className={message.role === 'ai' ? 'font-tiempos text-base' : 'font-styrene text-[15px]'}>
-                    {message.content}
-                  </p>
-                </div>
-              ))}
-              {isTyping && (
-                <div className="mb-4 bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl">
-                  <p className="font-tiempos text-base">{currentAiMessage}</p>
-                </div>
-              )}
-            </ScrollArea>
-            <div className="mt-4 relative">
-              <form className="flex items-center space-x-2" onSubmit={handleSendMessage}>
-                <div className="relative flex-1">
-                  <Input
-                    placeholder="Describe your website idea or ask for assistance"
-                    className="w-full bg-[#31312E] text-[#E5E5E2] rounded-full pl-4 pr-12 py-2 focus:ring-2 focus:ring-[#A3512B] focus:border-transparent placeholder-[#A6A39A]"
-                    value={inputMessage}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setInputMessage(e.target.value)}
-                  />
-                  <Button
-                    type="submit"
-                    className={`absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#A3512B] text-white hover:bg-[#B5613B] transition-all duration-300 ${isSending ? 'animate-pulse' : ''} rounded-full w-8 h-8 flex items-center justify-center opacity-0 ${inputMessage.trim() !== '' ? 'opacity-100' : ''}`}
-                    disabled={isSending || inputMessage.trim() === ''}
-                  >
-                    <ArrowUp className="h-4 w-4" />
-                  </Button>
-                </div>
-              </form>
+        <main className={`flex-1 flex flex-col overflow-hidden bg-[#2C2B28] text-[#999999] transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
+          <div className="flex-1 flex justify-center items-center">
+            <div className="w-3/5 max-w-3xl">
+              <ScrollArea className={`h-[calc(100vh-10rem)] mt-4 ${isFirstInteraction ? 'hidden' : ''}`}>
+                {messages.map((message: Message, index: number) => (
+                  <div key={index} className={`mb-4 ${message.role === 'ai' ? 'bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl' : 'bg-[#21201C] text-[#E5E5E2] p-3 rounded-2xl'}`}>
+                    <p className={message.role === 'ai' ? 'font-tiempos text-base' : 'font-styrene text-[15px]'}>
+                      {message.content}
+                    </p>
+                  </div>
+                ))}
+                {isTyping && (
+                  <div className="mb-4 bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl">
+                    <p className="font-tiempos text-base">{currentAiMessage}</p>
+                  </div>
+                )}
+              </ScrollArea>
+              <div 
+                className={`relative transition-all duration-1000 ease-in-out ${
+                  isFirstInteraction 
+                    ? 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2' 
+                    : 'transform translate-y-0'
+                }`}
+              >
+                {isFirstInteraction && (
+                  <div className="text-center mb-4">
+                    <TypewriterText text="Got a website concept? I'm here to assist." />
+                  </div>
+                )}
+                <form className="flex items-center space-x-2" onSubmit={handleSendMessage}>
+                  <div className="relative flex-1">
+                    <Input
+                      placeholder={isFirstInteraction ? "Message Eden" : "Reply to Eden..."}
+                      className="w-full bg-[#31312E] text-[#E5E5E2] rounded-full pl-4 pr-12 py-2 focus:ring-2 focus:ring-[#444444] focus:border-transparent placeholder-[#A6A39A]"
+                      value={inputMessage}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => setInputMessage(e.target.value)}
+                    />
+                    <Button
+                      type="submit"
+                      className={`absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#A3512B] text-white hover:bg-[#B5613B] transition-all duration-300 ${isSending ? 'animate-pulse' : ''} rounded-full w-8 h-8 flex items-center justify-center opacity-0 ${inputMessage.trim() !== '' ? 'opacity-100' : ''}`}
+                      disabled={isSending || inputMessage.trim() === ''}
+                    >
+                      <ArrowUp className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
-        </div>
-      </main>
+        </main>
 
         {/* Real-time Preview Toggle */}
         <Button
@@ -321,8 +378,8 @@ const WebSplatInterface: React.FC = () => {
         </Button>
 
         {/* Real-time Preview Panel */}
-        <aside className={`w-96 flex flex-col bg-[#2A2A2A] text-[#888888] fixed right-0 top-14 bottom-4 rounded-l-2xl transition-transform duration-300 ease-in-out ${previewOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-          <div className="h-14 border-b border-[#333333] flex items-center justify-between px-4 rounded-tl-2xl">
+        <aside className={`fixed inset-0 bg-[#2A2A2A] text-[#888888] transition-transform duration-300 ease-in-out ${previewOpen ? 'translate-x-0' : 'translate-x-full'} z-50`}>
+          <div className="h-14 border-b border-[#333333] flex items-center justify-between px-4">
             <h2 className="font-semibold">Real-time Preview</h2>
             <div className="flex space-x-2">
               <Button
@@ -339,19 +396,21 @@ const WebSplatInterface: React.FC = () => {
               >
                 <Smartphone className="h-4 w-4" />
               </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={togglePreview}
+                className="ml-4"
+              >
+                <PanelRightOpen className="h-5 w-5" />
+              </Button>
             </div>
           </div>
-          <div className="flex-1 p-4 overflow-auto">
-            <div
-              className={`border-2 border-dashed border-[#333333] rounded-lg flex items-center justify-center ${
-                previewMode === 'desktop' ? 'w-full h-full' : 'w-1/2 h-3/4 mx-auto'
-              }`}
-            >
-              Your Design Here
-            </div>
+          <div className="flex-1 p-4 overflow-auto h-[calc(100vh-3.5rem)]">
+            <LivePreview html={generatedHtml} mode={previewMode} />
           </div>
-          <div className="p-2 text-sm text-[#777777] text-center rounded-bl-2xl">
-            Note: In a real implementation, this preview would update live as changes are made to the website design.
+          <div className="p-2 text-sm text-[#777777] text-center">
+            Note: This preview updates live as the AI generates the website code.
           </div>
         </aside>
       </div>
