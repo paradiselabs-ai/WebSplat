@@ -85,7 +85,7 @@ const WebSplatInterface: React.FC = () => {
       let fullResponse = '';
       let response = await mockAiResponse(responseIndex);
 
-      while (response !== null && !response.isComplete) {
+      while (response !== null) {
         if (response.word) {
           fullResponse += response.word + ' ';
           setCurrentAiMessage(fullResponse.trim());
@@ -96,6 +96,10 @@ const WebSplatInterface: React.FC = () => {
 
         // Wait for a short time to simulate typing speed
         await new Promise(resolve => setTimeout(resolve, 50));
+        
+        if (response.isComplete) {
+          break;
+        }
         
         response = await mockAiResponse(responseIndex);
       }
