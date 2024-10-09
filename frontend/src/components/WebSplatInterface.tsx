@@ -15,6 +15,35 @@ interface Message {
 
 type PreviewMode = 'desktop' | 'mobile';
 
+const MinimalAutonomyControl: React.FC<{
+  value: number;
+  onChange: (value: number) => void;
+}> = ({ value, onChange }) => {
+  return (
+    <div className="flex items-center space-x-2">
+      <input
+        type="range"
+        min="0"
+        max="100"
+        value={value}
+        onChange={(e) => onChange(parseInt(e.target.value))}
+        className="w-full h-2 bg-orange-200 rounded-full appearance-none cursor-pointer"
+        style={{
+          background: `linear-gradient(to right, #FFA500 0%, #FFA500 ${value}%, #E5E5E5 ${value}%, #E5E5E5 100%)`,
+        }}
+      />
+      <input
+        type="number"
+        min="0"
+        max="100"
+        value={value}
+        onChange={(e) => onChange(parseInt(e.target.value))}
+        className="w-12 text-center bg-transparent border border-gray-300 rounded"
+      />
+    </div>
+  );
+};
+
 const WebSplatInterface: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [previewOpen, setPreviewOpen] = useState<boolean>(false);
@@ -86,10 +115,6 @@ const WebSplatInterface: React.FC = () => {
     setIsEditingProjectName(false);
   };
 
-  const handleAutonomyLevelChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setAutonomyLevel(parseInt(e.target.value));
-  };
-
   const sidebarItems = [
     { name: 'UI Design', icon: Layout },
     { name: 'Monetization', icon: DollarSign },
@@ -99,9 +124,9 @@ const WebSplatInterface: React.FC = () => {
   ];
   
   return (
-    <div className="h-screen flex flex-col bg-[#363533] text-[#888888]">
+    <div className="h-screen flex flex-col bg-[#2C2B28] text-[#888888]">
       {/* Top Bar */}
-      <header className="h-14 flex items-center justify-between px-4 z-10 bg-gradient-to-b from-[#2A2A2A] to-[#363533]">
+      <header className="h-14 flex items-center justify-between px-4 z-10 bg-gradient-to-b from-[#2A2A2A] to-[#2C2B28]">
         <div className="flex items-center space-x-4">
           <span className="text-sm font-semibold text-[#888888]">WebSplat</span>
         </div>
@@ -159,7 +184,7 @@ const WebSplatInterface: React.FC = () => {
 
         {/* Sidebar */}
         <aside className={`w-64 p-4 flex flex-col bg-[#2A2A2A] text-[#888888] fixed h-[calc(100%-5rem)] mt-4 ml-4 mb-6 rounded-2xl transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} z-30`}>
-          <Button className="mb-6 bg-[#3A3A3A] text-[#999999] hover:bg-[#4A4A4A] transition-all duration-300 transform hover:scale-105">
+          <Button className="mb-6 bg-transparent text-[#999999] hover:bg-[#3A3A3A] transition-all duration-300 transform hover:scale-105">
             <Plus className="mr-2 h-4 w-4" /> New Website
           </Button>
           <ScrollArea className="flex-1">
@@ -171,45 +196,36 @@ const WebSplatInterface: React.FC = () => {
                   className="w-full justify-start hover:bg-[#3A3A3A] transition-all duration-300 group"
                 >
                   <div className="flex items-center w-full">
-                    <div className="bg-[#3A3A3A] p-2 rounded-lg mr-3 group-hover:bg-[#4A4A4A] transition-colors duration-300">
+                    <div className="p-2 rounded-lg mr-3 group-hover:bg-[#4A4A4A] transition-colors duration-300">
                       <item.icon className="h-5 w-5 text-[#888888] group-hover:text-[#AAAAAA] transition-colors duration-300" />
                     </div>
-                    <span className="text-[#888888] group-hover:text-[#AAAAAA] transition-colors duration-300">{item.name}</span>
+                    <span className="text-[#888888] group-hover:text-[#AAAAAA] transition-colors duration-300 text-sm">{item.name}</span>
                   </div>
                 </Button>
               ))}
             </nav>
           </ScrollArea>
           <div className="mt-6">
-            <label htmlFor="autonomy-slider" className="block text-sm font-medium mb-2">
+            <label htmlFor="autonomy-slider" className="block text-xs font-medium mb-2">
               AI Autonomy Level: {autonomyLevel}%
             </label>
-            <div className="relative">
-              <input
-                type="range"
-                id="autonomy-slider"
-                min="0"
-                max="100"
-                value={autonomyLevel}
-                onChange={handleAutonomyLevelChange}
-                className="w-full appearance-none bg-[#4A4A4A] h-2 rounded-full outline-none cursor-pointer"
-              />
-              <div 
-                className="absolute top-1/2 transform -translate-y-1/2 w-4 h-4 bg-[#A3512B] rounded-full cursor-pointer transition-all duration-200 hover:scale-110"
-                style={{ left: `calc(${autonomyLevel}% - 8px)` }}
-              ></div>
-            </div>
+            <MinimalAutonomyControl
+              value={autonomyLevel}
+              onChange={setAutonomyLevel}
+            />
           </div>
         </aside>
 
         {/* Main Content */}
-        <main className={`flex-1 flex flex-col overflow-hidden bg-[#363533] text-[#999999] transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
+        <main className={`flex-1 flex flex-col overflow-hidden bg-[#2C2B28] text-[#999999] transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
           <div className="flex-1 flex justify-center">
             <div className="w-3/5 max-w-3xl">
               <ScrollArea className="h-[calc(100vh-10rem)] mt-4">
                 {messages.map((message: Message, index: number) => (
-                  <div key={index} className={`mb-4 ${message.role === 'ai' ? 'bg-[#363634] text-[#E1E0DC] p-3 rounded-2xl' : 'bg-[#1C1B17] text-[#E0DFDD] p-3 rounded-2xl'}`}>
-                    {message.content}
+                  <div key={index} className={`mb-4 ${message.role === 'ai' ? 'bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl' : 'bg-[#21201C] text-[#E5E5E2] p-3 rounded-2xl'}`}>
+                    <p className={message.role === 'ai' ? 'font-tiempos text-base' : 'font-styrene text-[15px]'}>
+                      {message.content}
+                    </p>
                   </div>
                 ))}
               </ScrollArea>
@@ -218,7 +234,7 @@ const WebSplatInterface: React.FC = () => {
                   <div className="relative flex-1">
                     <Input
                       placeholder="Describe your website idea or ask for assistance"
-                      className="w-full bg-[#2A2A2A] text-[#E0DFDD] rounded-full pl-4 pr-12 py-2 focus:ring-2 focus:ring-[#A3512B] focus:border-transparent"
+                      className="w-full bg-[#31312E] text-[#E5E5E2] rounded-full pl-4 pr-12 py-2 focus:ring-2 focus:ring-[#A3512B] focus:border-transparent placeholder-[#A6A39A]"
                       value={inputMessage}
                       onChange={(e: ChangeEvent<HTMLInputElement>) => setInputMessage(e.target.value)}
                     />
