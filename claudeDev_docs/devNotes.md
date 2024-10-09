@@ -10,10 +10,11 @@ WebSplat is an AI-driven website creation platform that uses a hierarchical syst
 - Added an adjustable autonomy and creativity meter for AI agents
 - Created a main chat interface for user-AI interaction
 - Implemented tabs for different aspects of website development (UI design, monetization, SEO)
-- Added a toggle-able window view for UI design progress
+- Added a toggle-able window view for UI design progress with live TSX rendering
+- Successfully implemented live TSX preview using react-live library
 
 ## Current Focus
-- Implementing the new React/Next.js frontend
+- Implementing backend routes to support the new frontend functionality
 - Refactoring the AI agent system to support the hierarchical workflow
 - Integrating web search functionality
 - Implementing the autonomy and creativity control system
@@ -21,10 +22,11 @@ WebSplat is an AI-driven website creation platform that uses a hierarchical syst
 
 ## Technology Stack
 - Frontend: React, Next.js
-- Backend: Flask (Python)
+- Backend: FastAPI (Python)
 - AI Models: O1 (main reasoning), Vertex AI (quick tasks), other specialized models
 - Database: TBD (consider options based on scaling needs)
 - APIs: Tavily or Perplexity for web searches, various AI model APIs
+- Live TSX Rendering: react-live library
 
 ## AI Agent System
 - Hierarchical structure with O1 and Vertex AI at the top
@@ -37,17 +39,17 @@ WebSplat is an AI-driven website creation platform that uses a hierarchical syst
 - Main chat interface for user-AI interaction
 - Tabs for different aspects of website development
 - Adjustable autonomy/creativity meter
-- Toggle-able window view for UI design progress
+- Toggle-able window view for UI design progress with live TSX preview
 - Real-time progress visualization for various aspects (UI, monetization, SEO)
 
 ## Key Features to Implement
-1. Conversational AI prompt window
+1. Conversational AI prompt window (Completed)
 2. Web search integration for market research
 3. Hierarchical AI agent workflow
 4. Inter-agent communication and task delegation
 5. Autonomy and creativity adjustment system
 6. Real-time progress visualization
-7. UI design preview window
+7. UI design preview window with live TSX rendering (Completed)
 
 ## Best Practices
 - Follow React and Next.js best practices for component structure and state management
@@ -77,5 +79,18 @@ WebSplat is an AI-driven website creation platform that uses a hierarchical syst
 - Research and implement advanced caching strategies for improved performance
 - Design and implement a version control system for generated websites
 - Explore options for user account management and saved projects
+
+## Challenges and Solutions
+- Challenge: Implementing real-time TSX rendering
+  Solution: Successfully utilized the react-live library to create a live preview of generated TSX code
+- Challenge: Managing complex state in the frontend
+  Solution: Consider implementing a state management library like Redux or Recoil if the application state becomes too complex
+
+## Next Steps
+- Begin work on the backend routes to support the new frontend functionality
+- Start refactoring the AI agent system to support the hierarchical workflow
+- Investigate and implement web search API integration (Tavily or Perplexity)
+- Implement the autonomy and creativity control system
+- Develop the collaborative agent workflow with inter-agent communication
 
 Remember to update this document regularly with new insights, solutions to challenges, and important development practices specific to WebSplat. As the project evolves, continually reassess and optimize the integration of various AI models and services.

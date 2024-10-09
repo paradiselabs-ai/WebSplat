@@ -7,7 +7,8 @@ import { ScrollArea } from "./ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { PanelLeftOpen, PanelRightOpen, Settings, Plus, Laptop, Smartphone, Layout, DollarSign, Search, BarChart2, Cloud, FilePlus, PieChart, Edit2, ArrowUp } from 'lucide-react';
-import mockAiResponse from './mockAiResponse';
+import axios from 'axios';
+import { LiveProvider, LiveError, LivePreview } from 'react-live';
 
 interface Message {
   role: 'ai' | 'user';
@@ -15,6 +16,11 @@ interface Message {
 }
 
 type PreviewMode = 'desktop' | 'mobile';
+
+interface ConsultationResponse {
+  message: string;
+  tsx_preview?: string;
+}
 
 const MinimalAutonomyControl: React.FC<{
   value: number;
@@ -45,16 +51,14 @@ const MinimalAutonomyControl: React.FC<{
   );
 };
 
-const LivePreview: React.FC<{ html: string; mode: PreviewMode }> = ({ html, mode }) => {
+const LiveTsxPreview: React.FC<{ tsx: string; mode: PreviewMode }> = ({ tsx, mode }) => {
   return (
     <div className={`w-full h-full overflow-auto ${mode === 'mobile' ? 'max-w-[375px] mx-auto' : ''}`}>
       <div className={`border-2 border-[#444444] rounded-lg overflow-hidden ${mode === 'mobile' ? 'w-[375px] h-[667px]' : 'w-full h-full'}`}>
-        <iframe
-          srcDoc={html}
-          title="Live Preview"
-          className="w-full h-full border-0"
-          style={{ transform: mode === 'mobile' ? 'scale(0.75)' : 'none', transformOrigin: 'top left' }}
-        />
+        <LiveProvider code={tsx}>
+          <LivePreview />
+          <LiveError />
+        </LiveProvider>
       </div>
     </div>
   );
@@ -89,7 +93,9 @@ const TypewriterText: React.FC<{ text: string }> = ({ text }) => {
 const WebSplatInterface: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
   const [previewOpen, setPreviewOpen] = useState<boolean>(false);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    { role: 'ai', content: "Hello! I'm Eden, your AI consultation agent. How can I help you create your website today?" }
+  ]);
   const [inputMessage, setInputMessage] = useState<string>('');
   const [autonomyLevel, setAutonomyLevel] = useState<number>(50);
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
@@ -98,12 +104,8 @@ const WebSplatInterface: React.FC = () => {
   const [isEditingProjectName, setIsEditingProjectName] = useState<boolean>(false);
   const [isHoveringProjectName, setIsHoveringProjectName] = useState<boolean>(false);
   const [isSending, setIsSending] = useState<boolean>(false);
-  const [isTyping, setIsTyping] = useState<boolean>(false);
-  const [currentAiMessage, setCurrentAiMessage] = useState<string>('');
-  const [responseIndex, setResponseIndex] = useState<number>(0);
-  const [generatedHtml, setGeneratedHtml] = useState<string>('');
+  const [generatedTsx, setGeneratedTsx] = useState<string>('() => <div>Your website preview will appear here</div>');
   const [isFirstInteraction, setIsFirstInteraction] = useState<boolean>(true);
-  const [isInputBarMoving, setIsInputBarMoving] = useState<boolean>(false);
 
   const togglePreview = () => setPreviewOpen(!previewOpen);
 
@@ -112,66 +114,33 @@ const WebSplatInterface: React.FC = () => {
     if (inputMessage.trim() !== '') {
       setIsSending(true);
       setMessages(prevMessages => [...prevMessages, { role: 'user', content: inputMessage }]);
-      setInputMessage('');
-      if (isFirstInteraction) {
-        setIsInputBarMoving(true);
-        setTimeout(() => {
-          setIsFirstInteraction(false);
-          setIsInputBarMoving(false);
-        }, 500); // Duration of the animation
-      }
-
-      // Simulate sending delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setIsSending(false);
-      setIsTyping(true);
-
-      let fullResponse = '';
-      let response = await mockAiResponse(responseIndex);
-
-      while (response !== null) {
-        if (response.word) {
-          fullResponse += response.word + ' ';
-          setCurrentAiMessage(fullResponse.trim());
-          
-          // Force a re-render to show the updated message
-          setMessages(prevMessages => [...prevMessages]);
-        }
-
-        // Wait for a short time to simulate typing speed
-        await new Promise(resolve => setTimeout(resolve, 50));
+      
+      try {
+        const response = await axios.post<ConsultationResponse>('http://localhost:8000/consult', {
+          message: inputMessage,
+          autonomy_level: autonomyLevel
+        });
         
-        if (response.isComplete) {
-          break;
-        }
-        
-        response = await mockAiResponse(responseIndex);
-      }
-
-      if (response && response.isComplete) {
         setMessages(prevMessages => [
           ...prevMessages,
-          { role: 'ai', content: fullResponse.trim() }
+          { role: 'ai', content: response.data.message }
         ]);
         
-        if (response.code) {
-          console.log('Generated Code:', response.code);
-          setGeneratedHtml(prevHtml => prevHtml + response.code);
+        if (response.data.tsx_preview) {
+          setGeneratedTsx(response.data.tsx_preview);
         }
+      } catch (error: unknown) {
+        console.error('Error communicating with Consultation Agent:', error);
+        setMessages(prevMessages => [...prevMessages, { role: 'ai', content: 'I apologize, but I encountered an error while processing your request. Could you please try again?' }]);
       }
 
-      setIsTyping(false);
-      setCurrentAiMessage('');
-      setResponseIndex(prevIndex => prevIndex + 1);
+      setInputMessage('');
+      setIsSending(false);
+      if (isFirstInteraction) {
+        setIsFirstInteraction(false);
+      }
     }
   };
-
-  // Automatically trigger the next response when the AI finishes typing
-  useEffect(() => {
-    if (!isTyping && responseIndex > 0) {
-      handleSendMessage({ preventDefault: () => {} } as FormEvent<HTMLFormElement>);
-    }
-  }, [isTyping, responseIndex]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -187,7 +156,6 @@ const WebSplatInterface: React.FC = () => {
 
   useEffect(() => {
     const windowHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
-    const windowWidth = typeof window !== 'undefined' ? window.innerWidth : 0;
     const tolerance = 50; // Reduced tolerance for triggering
 
     if ((cursorPosition.x <= tolerance && cursorPosition.y >= windowHeight / 2 - tolerance && cursorPosition.y <= windowHeight / 2 + tolerance) || 
@@ -209,6 +177,13 @@ const WebSplatInterface: React.FC = () => {
 
   const handleProjectNameBlur = () => {
     setIsEditingProjectName(false);
+  };
+
+  const handleAutonomyChange = (newLevel: number) => {
+    setAutonomyLevel(newLevel);
+    // Notify the backend about the change in autonomy level
+    axios.post('http://localhost:8000/set_autonomy', { autonomy_level: newLevel })
+      .catch((error: unknown) => console.error('Error setting autonomy level:', error));
   };
 
   const sidebarItems = [
@@ -309,7 +284,7 @@ const WebSplatInterface: React.FC = () => {
             </label>
             <MinimalAutonomyControl
               value={autonomyLevel}
-              onChange={setAutonomyLevel}
+              onChange={handleAutonomyChange}
             />
           </div>
         </aside>
@@ -326,11 +301,6 @@ const WebSplatInterface: React.FC = () => {
                     </p>
                   </div>
                 ))}
-                {isTyping && (
-                  <div className="mb-4 bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl">
-                    <p className="font-tiempos text-base">{currentAiMessage}</p>
-                  </div>
-                )}
               </ScrollArea>
               <div 
                 className={`relative transition-all duration-1000 ease-in-out ${
@@ -407,7 +377,7 @@ const WebSplatInterface: React.FC = () => {
             </div>
           </div>
           <div className="flex-1 p-4 overflow-auto h-[calc(100vh-3.5rem)]">
-            <LivePreview html={generatedHtml} mode={previewMode} />
+            <LiveTsxPreview tsx={generatedTsx} mode={previewMode} />
           </div>
           <div className="p-2 text-sm text-[#777777] text-center">
             Note: This preview updates live as the AI generates the website code.
