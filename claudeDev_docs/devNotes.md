@@ -16,6 +16,10 @@ WebSplat is an AI-driven website creation platform that uses a hierarchical syst
 - Implemented autonomy level adjustments for agent behavior
 
 ## Current Focus
+- Rapidly integrating the backend with the frontend for a working MVP demo (Urgent)
+- Implementing additional views (monetization, SEO, etc.) in the interface left pane
+- Providing user-friendly visualizations of agent progress and ideas
+- Ensuring the consulting agent can provide progress updates and explain strategies
 - Enhancing the collaborative agent workflow
 - Improving the integration of O1 model as the main reasoning/brain
 - Developing progress visualization components for the frontend
@@ -51,6 +55,7 @@ WebSplat is an AI-driven website creation platform that uses a hierarchical syst
 5. Autonomy and creativity adjustment system (Completed)
 6. Real-time progress visualization (To Do)
 7. UI design preview window with live TSX rendering (Completed)
+8. Additional views for monetization, SEO, and other aspects (Urgent, In Progress)
 
 ## Best Practices
 - Follow React and Next.js best practices for component structure and state management
@@ -60,6 +65,13 @@ WebSplat is an AI-driven website creation platform that uses a hierarchical syst
 - Regularly update documentation to reflect current project state and future plans
 - Use ESLint and Prettier for consistent code formatting
 - Implement CI/CD pipelines for automated testing and deployment
+- NEVER OMIT UNRELATED CODE when making changes or additions
+- Always preserve the entire codebase, only modifying the specific parts relevant to the current task
+- Be extremely careful not to disrupt any working parts of the existing interface
+- Proceed with caution when making changes, especially to core functionality
+- When updating files, always read the entire content first and make changes without omitting any existing code
+- Regularly review and test the entire system to ensure all components are working together correctly
+- For urgent MVP development, focus on rapid integration while maintaining existing functionality
 
 ## Testing Strategy
 - Implement unit tests for individual components (React components, AI agents, utility functions)
@@ -88,22 +100,22 @@ WebSplat is an AI-driven website creation platform that uses a hierarchical syst
   Solution: Consider implementing a state management library like Redux or Recoil if the application state becomes too complex
 - Challenge: Coordinating multiple AI agents
   Solution: Implemented a hierarchical structure with adjustable autonomy levels
+- Challenge: Rapid MVP development for hackathon
+  Solution: Focus on integrating existing components and implementing essential new views without disrupting core functionality
 
-## Next Steps
-1. Enhance collaborative agent workflow:
-   - Implement a more sophisticated task delegation system
-   - Create a shared knowledge base for agents to access and update
-   - Develop a priority system for agent tasks
-2. Improve O1 model integration:
-   - Implement more complex decision-making algorithms for the O1 model
-   - Create a feedback loop system for continuous improvement of the O1 model's performance
-3. Develop progress visualization components:
-   - Create a dashboard component to display overall project progress
-   - Implement real-time updates for UI design, monetization, and SEO progress
-   - Design intuitive visualizations for complex data (e.g., SEO metrics, user engagement)
-4. Prepare for comprehensive system testing:
-   - Develop a test plan covering all major components and integrations
-   - Create mock data and scenarios for thorough testing
-   - Implement automated testing scripts for continuous integration
+## Next Steps (Urgent - MVP Development)
+1. Rapidly integrate the backend with the frontend:
+   - Ensure all existing agent communications are preserved
+   - Verify that the consulting agent can properly interact with the user and other agents
+2. Implement additional views in the left pane:
+   - Add views for monetization, SEO, and other relevant aspects
+   - Implement basic visualizations for each aspect
+3. Enhance the consultation agent's capabilities:
+   - Enable progress report generation on user request
+   - Implement functionality to explain specific strategies (e.g., monetization)
+4. Conduct rapid testing:
+   - Verify all components are working together
+   - Test user interactions and agent responses
+   - Ensure real-time updates are displayed correctly in all views
 
 Remember to update this document regularly with new insights, solutions to challenges, and important development practices specific to WebSplat. As the project evolves, continually reassess and optimize the integration of various AI models and services.

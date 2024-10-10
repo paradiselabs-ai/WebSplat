@@ -41,6 +41,13 @@ def o1_mini_call(prompt: str) -> str:
         logging.error(f"Error in o1_mini_call: {e}")
         return "Error in o1_mini_call"
 
+def o1_call(prompt: str) -> str:
+    try:
+        return ai_ml_client.generate_response(prompt, "o1")
+    except Exception as e:
+        logging.error(f"Error in o1_call: {e}")
+        return "Error in o1_call"
+
 def claude_vertex_call(prompt: str) -> str:
     try:
         response = aiplatform.ChatModel.from_pretrained("claude-3-sonnet@001").predict(prompt=prompt)
@@ -80,6 +87,7 @@ class EnhancedAssistantAgent(AssistantAgent):
     def __init__(self, name: str, system_message: str, llm_config: Dict[str, Any]):
         super().__init__(name=name, system_message=system_message, llm_config=llm_config)
         self.tasks = []
+        self.completed_tasks = []
 
     def add_task(self, task: str, priority: int = 1):
         self.tasks.append({"task": task, "priority": priority})
@@ -88,16 +96,39 @@ class EnhancedAssistantAgent(AssistantAgent):
     def get_next_task(self):
         return self.tasks.pop(0) if self.tasks else None
 
+    def complete_task(self, task: Dict[str, Any]):
+        self.completed_tasks.append(task)
+
     def update_shared_knowledge(self, key: str, value: Any):
         SHARED_KNOWLEDGE[key] = value
 
     def get_shared_knowledge(self, key: str) -> Any:
         return SHARED_KNOWLEDGE.get(key)
 
+    def delegate_task(self, task: str, target_agent: 'EnhancedAssistantAgent', priority: int = 1):
+        target_agent.add_task(task, priority)
+        logging.info(f"{self.name} delegated task '{task}' to {target_agent.name}")
+
+    def request_information(self, query: str, target_agent: 'EnhancedAssistantAgent') -> str:
+        response = target_agent.llm_config["function"](f"{self.name} requests: {query}")
+        logging.info(f"{self.name} requested information from {target_agent.name}: {query}")
+        return response
+
+    def request_reasoning(self, query: str, o1_agent: 'EnhancedAssistantAgent') -> str:
+        response = o1_agent.llm_config["function"](f"Reasoning request from {self.name}: {query}")
+        logging.info(f"{self.name} requested reasoning from O1 agent: {query}")
+        return response
+
 # Create enhanced agent instances
+o1_agent = EnhancedAssistantAgent(
+    name="O1_Agent",
+    system_message="You are the central reasoning agent powered by the O1 model. Your role is to provide high-level reasoning, strategic planning, and decision-making support for the website creation process. You cannot process images, search the web, or use external tools. Focus on analyzing information, providing insights, and guiding the overall strategy.",
+    llm_config={"function": o1_call}
+)
+
 head_project_manager = EnhancedAssistantAgent(
     name="Head_Project_Manager",
-    system_message="You are the head project manager overseeing the website creation process. Coordinate all other agents and ensure the project meets the user's requirements.",
+    system_message="You are the head project manager overseeing the website creation process. Coordinate with the O1 agent for high-level reasoning and strategic decisions. Manage task delegation and ensure the project meets the user's requirements.",
     llm_config={"function": o1_mini_call}
 )
 
@@ -159,17 +190,16 @@ def create_website(user_requirements: str, autonomy_level: int) -> Dict[str, Any
 
     # Adjust agent behavior based on autonomy level
     if AUTONOMY_LEVEL < 30:
-        consultation_agent.system_message += " Frequently ask for user input and confirmation."
+        head_project_manager.system_message += " Frequently consult with other agents and ask for user input when making decisions."
     elif AUTONOMY_LEVEL > 70:
-        consultation_agent.system_message += " Make more autonomous decisions with minimal user input."
+        head_project_manager.system_message += " Make more autonomous decisions with minimal consultation."
 
     # Initialize task queue
-    head_project_manager.add_task("Analyze user requirements", 3)
-    head_project_manager.add_task("Create project plan", 2)
-    head_project_manager.add_task("Assign tasks to agents", 1)
+    head_project_manager.add_task("Analyze user requirements and create high-level project plan", 3)
+    head_project_manager.add_task("Delegate initial tasks to appropriate agents", 2)
 
     groupchat = GroupChat(
-        agents=[user_proxy, head_project_manager, frontend_designer, lead_developer, consultation_agent, user_content_manager, monetization_agent, seo_agent, research_agent],
+        agents=[user_proxy, o1_agent, head_project_manager, frontend_designer, lead_developer, consultation_agent, user_content_manager, monetization_agent, seo_agent, research_agent],
         messages=[],
         max_round=50
     )
@@ -183,15 +213,42 @@ def create_website(user_requirements: str, autonomy_level: int) -> Dict[str, Any
         )
 
         # Process tasks in the queue
-        while TASK_QUEUE:
-            current_task = TASK_QUEUE.pop(0)
-            agent = current_task["agent"]
-            task = current_task["task"]
-            agent.add_task(task)
-            next_task = agent.get_next_task()
-            if next_task:
-                result = agent.llm_config["function"](next_task["task"])
-                agent.update_shared_knowledge(next_task["task"], result)
+        while True:
+            active_agents = [agent for agent in groupchat.agents if isinstance(agent, EnhancedAssistantAgent) and agent.tasks]
+            if not active_agents:
+                break
+
+            for agent in active_agents:
+                next_task = agent.get_next_task()
+                if next_task:
+                    task_description = next_task["task"]
+                    logging.info(f"{agent.name} is working on task: {task_description}")
+                    
+                    # Request reasoning from O1 agent for complex tasks
+                    if agent != o1_agent and "analyze" in task_description.lower() or "strategy" in task_description.lower():
+                        reasoning = agent.request_reasoning(task_description, o1_agent)
+                        logging.info(f"O1 reasoning for {agent.name}'s task: {reasoning}")
+                    
+                    # Check if the agent needs information from another agent
+                    if "request information from" in task_description.lower():
+                        target_agent_name = task_description.split("from")[-1].strip()
+                        target_agent = next((a for a in groupchat.agents if a.name == target_agent_name), None)
+                        if target_agent:
+                            info = agent.request_information(task_description, target_agent)
+                            agent.update_shared_knowledge(task_description, info)
+                    else:
+                        result = agent.llm_config["function"](task_description)
+                        agent.update_shared_knowledge(task_description, result)
+                    
+                    agent.complete_task(next_task)
+                    
+                    # Check if the agent needs to delegate a task
+                    if "delegate" in result.lower():
+                        delegation_info = result.split("delegate")[-1].strip()
+                        target_agent_name, delegated_task = delegation_info.split(":", 1)
+                        target_agent = next((a for a in groupchat.agents if a.name == target_agent_name.strip()), None)
+                        if target_agent:
+                            agent.delegate_task(delegated_task.strip(), target_agent)
 
         # Extract relevant information from the chat history
         consultation_response = extract_consultation_response(groupchat.messages)
@@ -224,6 +281,40 @@ def extract_tsx_preview(messages: list) -> str:
             return message["content"][start:end].strip()
     return "() => <div>No TSX preview available yet.</div>"
 
+# New functions for progress report and strategy explanation
+def generate_progress_report() -> str:
+    report = "Current Progress Report:\n\n"
+    
+    for agent in [head_project_manager, frontend_designer, lead_developer, consultation_agent, user_content_manager, monetization_agent, seo_agent]:
+        report += f"{agent.name}:\n"
+        report += f"  Completed tasks: {len(agent.completed_tasks)}\n"
+        report += f"  Pending tasks: {len(agent.tasks)}\n"
+        if agent.completed_tasks:
+            report += "  Last completed task: " + agent.completed_tasks[-1]["task"] + "\n"
+        if agent.tasks:
+            report += "  Next task: " + agent.tasks[0]["task"] + "\n"
+        report += "\n"
+    
+    report += f"Shared Knowledge Items: {len(SHARED_KNOWLEDGE)}\n"
+    report += f"Current Autonomy Level: {AUTONOMY_LEVEL}\n"
+    
+    return report
+
+def explain_strategy(strategy_type: str) -> str:
+    strategy_explanations = {
+        "monetization": monetization_agent.llm_config["function"]("Explain the current monetization strategy for the website"),
+        "seo": seo_agent.llm_config["function"]("Explain the current SEO strategy for the website"),
+        "ui_design": frontend_designer.llm_config["function"]("Explain the current UI design strategy for the website"),
+        "development": lead_developer.llm_config["function"]("Explain the current development strategy for the website"),
+        "content": user_content_manager.llm_config["function"]("Explain the current content management strategy for the website"),
+    }
+    
+    return strategy_explanations.get(strategy_type.lower(), "Strategy type not recognized. Available types are: monetization, seo, ui_design, development, content.")
+
 if __name__ == "__main__":
     result = create_website("Create a landing page for a new fitness app targeting young professionals.", 50)
     print(result)
+    print("\nProgress Report:")
+    print(generate_progress_report())
+    print("\nMonetization Strategy Explanation:")
+    print(explain_strategy("monetization"))

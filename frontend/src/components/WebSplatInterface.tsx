@@ -6,10 +6,8 @@ import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { Settings, Plus, Laptop, Smartphone, Layout, DollarSign, Search, BarChart2, Cloud, Edit2, ArrowUp } from 'lucide-react';
-import { LiveProvider, LiveError, LivePreview } from 'react-live';
+import { PanelRightOpen, Settings, Plus, Laptop, Smartphone, Layout, DollarSign, Search, BarChart2, Cloud, Edit2, ArrowUp } from 'lucide-react';
 import axios from 'axios';
-import { toast, Toaster } from 'react-hot-toast';
 
 interface Message {
   role: 'ai' | 'user';
@@ -18,10 +16,10 @@ interface Message {
 
 type PreviewMode = 'desktop' | 'mobile';
 
-interface ConsultationResponse {
-  message: string;
-  tsx_preview: string;
-  shared_knowledge: Record<string, unknown>;
+interface AgentView {
+  name: string;
+  icon: React.ElementType;
+  content: string[];
 }
 
 const MinimalAutonomyControl: React.FC<{
@@ -53,14 +51,16 @@ const MinimalAutonomyControl: React.FC<{
   );
 };
 
-const LiveTsxPreview: React.FC<{ tsx: string; mode: PreviewMode }> = ({ tsx, mode }) => {
+const LivePreview: React.FC<{ html: string; mode: PreviewMode }> = ({ html, mode }) => {
   return (
     <div className={`w-full h-full overflow-auto ${mode === 'mobile' ? 'max-w-[375px] mx-auto' : ''}`}>
       <div className={`border-2 border-[#444444] rounded-lg overflow-hidden ${mode === 'mobile' ? 'w-[375px] h-[667px]' : 'w-full h-full'}`}>
-        <LiveProvider code={tsx}>
-          <LivePreview />
-          <LiveError />
-        </LiveProvider>
+        <iframe
+          srcDoc={html}
+          title="Live Preview"
+          className="w-full h-full border-0"
+          style={{ transform: mode === 'mobile' ? 'scale(0.75)' : 'none', transformOrigin: 'top left' }}
+        />
       </div>
     </div>
   );
@@ -94,9 +94,8 @@ const TypewriterText: React.FC<{ text: string }> = ({ text }) => {
 
 const WebSplatInterface: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'ai', content: "Hello! I'm Eden, your AI consultation agent. How can I help you create your website today?" }
-  ]);
+  const [previewOpen, setPreviewOpen] = useState<boolean>(false);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState<string>('');
   const [autonomyLevel, setAutonomyLevel] = useState<number>(50);
   const [previewMode, setPreviewMode] = useState<PreviewMode>('desktop');
@@ -105,44 +104,88 @@ const WebSplatInterface: React.FC = () => {
   const [isEditingProjectName, setIsEditingProjectName] = useState<boolean>(false);
   const [isHoveringProjectName, setIsHoveringProjectName] = useState<boolean>(false);
   const [isSending, setIsSending] = useState<boolean>(false);
-  const [generatedTsx, setGeneratedTsx] = useState<string>('() => <div>Your website preview will appear here</div>');
+  const [isTyping, setIsTyping] = useState<boolean>(false);
+  const [currentAiMessage, setCurrentAiMessage] = useState<string>('');
+  const [generatedHtml, setGeneratedHtml] = useState<string>('');
   const [isFirstInteraction, setIsFirstInteraction] = useState<boolean>(true);
-  const [sharedKnowledge, setSharedKnowledge] = useState<Record<string, unknown>>({});
-  const [activeTab, setActiveTab] = useState<string>('chat');
+  const [agentViews, setAgentViews] = useState<AgentView[]>([
+    { name: 'UI Design', icon: Layout, content: [] },
+    { name: 'Monetization', icon: DollarSign, content: [] },
+    { name: 'SEO', icon: Search, content: [] },
+    { name: 'Analytics', icon: BarChart2, content: [] },
+    { name: 'Deployment', icon: Cloud, content: [] },
+  ]);
+  const [activeView, setActiveView] = useState<string>('chat');
+  const [progressReport, setProgressReport] = useState<string>('');
+  const [strategyExplanation, setStrategyExplanation] = useState<string>('');
+
+  const togglePreview = () => setPreviewOpen(!previewOpen);
 
   const handleSendMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (inputMessage.trim() !== '') {
       setIsSending(true);
       setMessages(prevMessages => [...prevMessages, { role: 'user', content: inputMessage }]);
-      
+      setInputMessage('');
+      if (isFirstInteraction) {
+        setTimeout(() => {
+          setIsFirstInteraction(false);
+        }, 500);
+      }
+
       try {
-        const response = await axios.post<ConsultationResponse>('http://localhost:8000/consult', {
+        const response = await axios.post('http://localhost:8000/consult', {
           message: inputMessage,
           autonomy_level: autonomyLevel
         });
-        
-        setMessages(prevMessages => [
-          ...prevMessages,
-          { role: 'ai', content: response.data.message }
-        ]);
-        
+
+        const aiResponse = response.data.message;
+        setMessages(prevMessages => [...prevMessages, { role: 'ai', content: aiResponse }]);
+
         if (response.data.tsx_preview) {
-          setGeneratedTsx(response.data.tsx_preview);
+          setGeneratedHtml(response.data.tsx_preview);
         }
 
-        setSharedKnowledge(response.data.shared_knowledge);
-      } catch (error: unknown) {
-        console.error('Error communicating with Consultation Agent:', error);
-        toast.error('An error occurred while processing your request. Please try again.');
+        // Update agent views
+        const updatedViews = agentViews.map(view => {
+          if (response.data[view.name.toLowerCase()]) {
+            return {
+              ...view,
+              content: [...view.content, response.data[view.name.toLowerCase()]]
+            };
+          }
+          return view;
+        });
+        setAgentViews(updatedViews);
+
+        setIsTyping(false);
+        setCurrentAiMessage('');
+      } catch (error) {
+        console.error('Error communicating with backend:', error);
         setMessages(prevMessages => [...prevMessages, { role: 'ai', content: 'I apologize, but I encountered an error while processing your request. Could you please try again?' }]);
       } finally {
-        setInputMessage('');
         setIsSending(false);
-        if (isFirstInteraction) {
-          setIsFirstInteraction(false);
-        }
       }
+    }
+  };
+
+  const requestProgressReport = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/progress_report');
+      setProgressReport(response.data.report);
+    } catch (error) {
+      console.error('Error fetching progress report:', error);
+      setProgressReport('Error fetching progress report. Please try again.');
+    }
+  };
+
+  const requestStrategyExplanation = async (strategyType: string) => {
+    try {
+      const response = await axios.post('http://localhost:8000/explain_strategy', { strategy_type: strategyType });
+      setStrategyExplanation(response.data.explanation);
+    } catch (error) {
+      console.error('Error fetching strategy explanation:', error);
+      setStrategyExplanation('Error fetching strategy explanation. Please try again.');
     }
   };
 
@@ -183,28 +226,8 @@ const WebSplatInterface: React.FC = () => {
     setIsEditingProjectName(false);
   };
 
-  const handleAutonomyChange = async (newLevel: number) => {
-    setAutonomyLevel(newLevel);
-    try {
-      await axios.post('http://localhost:8000/set_autonomy', { autonomy_level: newLevel });
-      toast.success('Autonomy level updated successfully');
-    } catch (error: unknown) {
-      console.error('Error setting autonomy level:', error);
-      toast.error('Failed to update autonomy level');
-    }
-  };
-
-  const sidebarItems = [
-    { name: 'UI Design', icon: Layout },
-    { name: 'Monetization', icon: DollarSign },
-    { name: 'SEO', icon: Search },
-    { name: 'Analytics', icon: BarChart2 },
-    { name: 'Deployment', icon: Cloud },
-  ];
-  
   return (
     <div className="h-screen flex flex-col bg-[#2C2B28] text-[#888888]">
-      <Toaster position="top-right" />
       {/* Top Bar */}
       <header className="h-14 flex items-center justify-between px-4 z-10 bg-gradient-to-b from-[#2A2A2A] to-[#2C2B28]">
         <div className="flex items-center space-x-4">
@@ -271,11 +294,12 @@ const WebSplatInterface: React.FC = () => {
           </Button>
           <ScrollArea className="flex-1">
             <nav className="space-y-3">
-              {sidebarItems.map((item, index) => (
+              {agentViews.map((item, index) => (
                 <Button 
                   key={index}
                   variant="ghost" 
-                  className="w-full justify-start hover:bg-[#3A3A3A] transition-all duration-300 group"
+                  className={`w-full justify-start hover:bg-[#3A3A3A] transition-all duration-300 group ${activeView === item.name ? 'bg-[#3A3A3A]' : ''}`}
+                  onClick={() => setActiveView(item.name)}
                 >
                   <div className="flex items-center w-full">
                     <div className="p-2 rounded-lg mr-3 group-hover:bg-[#4A4A4A] transition-colors duration-300">
@@ -293,17 +317,20 @@ const WebSplatInterface: React.FC = () => {
             </label>
             <MinimalAutonomyControl
               value={autonomyLevel}
-              onChange={handleAutonomyChange}
+              onChange={setAutonomyLevel}
             />
           </div>
         </aside>
 
         {/* Main Content */}
         <main className={`flex-1 flex flex-col overflow-hidden bg-[#2C2B28] text-[#999999] transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+          <Tabs value={activeView} onValueChange={setActiveView} className="flex-1 flex flex-col">
             <TabsList className="justify-start px-4 py-2 border-b border-[#333333]">
               <TabsTrigger value="chat">Chat</TabsTrigger>
-              <TabsTrigger value="preview">Preview</TabsTrigger>
+              {agentViews.map((view, index) => (
+                <TabsTrigger key={index} value={view.name}>{view.name}</TabsTrigger>
+              ))}
+              <TabsTrigger value="progress">Progress</TabsTrigger>
             </TabsList>
             <TabsContent value="chat" className="flex-1 flex flex-col">
               <div className="flex-1 flex justify-center items-center">
@@ -316,6 +343,11 @@ const WebSplatInterface: React.FC = () => {
                         </p>
                       </div>
                     ))}
+                    {isTyping && (
+                      <div className="mb-4 bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl">
+                        <p className="font-tiempos text-base">{currentAiMessage}</p>
+                      </div>
+                    )}
                   </ScrollArea>
                   <div 
                     className={`relative transition-all duration-1000 ease-in-out ${
@@ -329,14 +361,13 @@ const WebSplatInterface: React.FC = () => {
                         <TypewriterText text="Got a website concept? I'm here to assist." />
                       </div>
                     )}
-                    <form className="flex items-center space-x-2" onSubmit={handleSendMessage} role="form">
+                    <form className="flex items-center space-x-2" onSubmit={handleSendMessage}>
                       <div className="relative flex-1">
                         <Input
                           placeholder={isFirstInteraction ? "Message Eden" : "Reply to Eden..."}
                           className="w-full bg-[#31312E] text-[#E5E5E2] rounded-full pl-4 pr-12 py-2 focus:ring-2 focus:ring-[#444444] focus:border-transparent placeholder-[#A6A39A]"
                           value={inputMessage}
                           onChange={(e: ChangeEvent<HTMLInputElement>) => setInputMessage(e.target.value)}
-                          disabled={isSending}
                         />
                         <Button
                           type="submit"
@@ -351,38 +382,85 @@ const WebSplatInterface: React.FC = () => {
                 </div>
               </div>
             </TabsContent>
-            <TabsContent value="preview" className="flex-1 flex flex-col">
-              <div className="flex-1 p-4 overflow-auto">
-                <LiveTsxPreview tsx={generatedTsx} mode={previewMode} />
-              </div>
-              <div className="p-2 flex justify-center space-x-4">
-                <Button
-                  variant={previewMode === 'desktop' ? 'default' : 'ghost'}
-                  onClick={() => setPreviewMode('desktop')}
-                >
-                  <Laptop className="h-4 w-4 mr-2" /> Desktop
+            {agentViews.map((view, index) => (
+              <TabsContent key={index} value={view.name} className="flex-1 p-4 overflow-auto">
+                <h2 className="text-xl font-bold mb-4">{view.name}</h2>
+                <ul className="space-y-2">
+                  {view.content.map((item, i) => (
+                    <li key={i} className="bg-[#31312E] p-2 rounded">{item}</li>
+                  ))}
+                </ul>
+                <Button onClick={() => requestStrategyExplanation(view.name)} className="mt-4">
+                  Explain {view.name} Strategy
                 </Button>
-                <Button
-                  variant={previewMode === 'mobile' ? 'default' : 'ghost'}
-                  onClick={() => setPreviewMode('mobile')}
-                >
-                  <Smartphone className="h-4 w-4 mr-2" /> Mobile
-                </Button>
-              </div>
+                {strategyExplanation && (
+                  <div className="mt-4 bg-[#31312E] p-3 rounded">
+                    <h3 className="font-bold mb-2">{view.name} Strategy Explanation:</h3>
+                    <p>{strategyExplanation}</p>
+                  </div>
+                )}
+              </TabsContent>
+            ))}
+            <TabsContent value="progress" className="flex-1 p-4 overflow-auto">
+              <h2 className="text-xl font-bold mb-4">Progress Report</h2>
+              <Button onClick={requestProgressReport} className="mb-4">
+                Get Progress Report
+              </Button>
+              {progressReport && (
+                <div className="bg-[#31312E] p-3 rounded">
+                  <pre className="whitespace-pre-wrap">{progressReport}</pre>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </main>
 
-        {/* Shared Knowledge Panel */}
-        <aside className="fixed bottom-0 left-0 w-full bg-[#2A2A2A] text-[#888888] p-4 border-t border-[#333333]">
-          <h3 className="font-semibold mb-2">Shared Knowledge</h3>
-          <ScrollArea className="h-32">
-            {Object.entries(sharedKnowledge).map(([key, value]) => (
-              <div key={key} className="mb-2">
-                <strong>{key}:</strong> {JSON.stringify(value)}
-              </div>
-            ))}
-          </ScrollArea>
+        {/* Real-time Preview Toggle */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={togglePreview}
+          className="fixed top-1/2 right-0 transform -translate-y-1/2 z-40 bg-[#2A2A2A] hover:bg-[#3A3A3A] rounded-l-md"
+          title="Toggle Preview"
+        >
+          <PanelRightOpen className="h-5 w-5" />
+        </Button>
+
+        {/* Real-time Preview Panel */}
+        <aside className={`fixed inset-0 bg-[#2A2A2A] text-[#888888] transition-transform duration-300 ease-in-out ${previewOpen ? 'translate-x-0' : 'translate-x-full'} z-50`}>
+          <div className="h-14 border-b border-[#333333] flex items-center justify-between px-4">
+            <h2 className="font-semibold">Real-time Preview</h2>
+            <div className="flex space-x-2">
+              <Button
+                variant={previewMode === 'desktop' ? 'default' : 'ghost'}
+                size="icon"
+                onClick={() => setPreviewMode('desktop')}
+              >
+                <Laptop className="h-4 w-4" />
+              </Button>
+              <Button
+                variant={previewMode === 'mobile' ? 'default' : 'ghost'}
+                size="icon"
+                onClick={() => setPreviewMode('mobile')}
+              >
+                <Smartphone className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={togglePreview}
+                className="ml-4"
+              >
+                <PanelRightOpen className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+          <div className="flex-1 p-4 overflow-auto h-[calc(100vh-3.5rem)]">
+            <LivePreview html={generatedHtml} mode={previewMode} />
+          </div>
+          <div className="p-2 text-sm text-[#777777] text-center">
+            Note: This preview updates live as the AI generates the website code.
+          </div>
         </aside>
       </div>
     </div>
