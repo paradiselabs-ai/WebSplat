@@ -19,18 +19,18 @@ Implement New User Interface and Agent Workflow with Live TSX Preview
    - Create an adjustable autonomy/creativity meter component
    - Implement a toggle-able window view for UI design progress
 2. [x] Implement live TSX rendering for real-time preview
-3. [ ] Update backend to support new frontend functionality:
+3. [x] Update backend to support new frontend functionality:
    - Implement routes for the main chat interface
    - Create endpoints for different agent functionalities
-   - Implement web search integration (Tavily or Perplexity)
-4. [ ] Refactor AI agent system:
+   - Implement web search integration (Tavily)
+4. [x] Refactor AI agent system:
    - Implement hierarchical agent workflow with O1 and Vertex AI at the top
    - Create modular, task-switchable lower-level agents
    - Implement inter-agent communication and task delegation
-5. [ ] Integrate web search functionality:
-   - Implement Tavily or Perplexity API integration for web searches
+5. [x] Integrate web search functionality:
+   - Implement Tavily API integration for web searches
    - Create a system for agents to use search results in their decision-making
-6. [ ] Implement autonomy and creativity control:
+6. [x] Implement autonomy and creativity control:
    - Create a system to adjust agent behavior based on the autonomy/creativity meter
    - Implement logic for more or less user prompting based on the meter setting
 7. [ ] Create collaborative agent workflow:
@@ -55,6 +55,7 @@ Implement New User Interface and Agent Workflow with Live TSX Preview
 - Regularly update documentation to reflect new features and workflows
 
 ## Next Steps
-- Begin implementation of the backend routes to support the new frontend functionality
-- Start refactoring the AI agent system to support the new hierarchical workflow
-- Investigate and implement web search API integration
+- Implement a more sophisticated collaborative agent workflow
+- Enhance the integration of O1 model as the main reasoning/brain
+- Develop progress visualization components for the frontend
+- Begin comprehensive testing of the entire system

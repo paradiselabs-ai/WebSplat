@@ -6,9 +6,10 @@ import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { PanelLeftOpen, PanelRightOpen, Settings, Plus, Laptop, Smartphone, Layout, DollarSign, Search, BarChart2, Cloud, FilePlus, PieChart, Edit2, ArrowUp } from 'lucide-react';
-import axios from 'axios';
+import { Settings, Plus, Laptop, Smartphone, Layout, DollarSign, Search, BarChart2, Cloud, Edit2, ArrowUp } from 'lucide-react';
 import { LiveProvider, LiveError, LivePreview } from 'react-live';
+import axios from 'axios';
+import { toast, Toaster } from 'react-hot-toast';
 
 interface Message {
   role: 'ai' | 'user';
@@ -19,7 +20,8 @@ type PreviewMode = 'desktop' | 'mobile';
 
 interface ConsultationResponse {
   message: string;
-  tsx_preview?: string;
+  tsx_preview: string;
+  shared_knowledge: Record<string, unknown>;
 }
 
 const MinimalAutonomyControl: React.FC<{
@@ -92,7 +94,6 @@ const TypewriterText: React.FC<{ text: string }> = ({ text }) => {
 
 const WebSplatInterface: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
-  const [previewOpen, setPreviewOpen] = useState<boolean>(false);
   const [messages, setMessages] = useState<Message[]>([
     { role: 'ai', content: "Hello! I'm Eden, your AI consultation agent. How can I help you create your website today?" }
   ]);
@@ -106,8 +107,8 @@ const WebSplatInterface: React.FC = () => {
   const [isSending, setIsSending] = useState<boolean>(false);
   const [generatedTsx, setGeneratedTsx] = useState<string>('() => <div>Your website preview will appear here</div>');
   const [isFirstInteraction, setIsFirstInteraction] = useState<boolean>(true);
-
-  const togglePreview = () => setPreviewOpen(!previewOpen);
+  const [sharedKnowledge, setSharedKnowledge] = useState<Record<string, unknown>>({});
+  const [activeTab, setActiveTab] = useState<string>('chat');
 
   const handleSendMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -129,15 +130,18 @@ const WebSplatInterface: React.FC = () => {
         if (response.data.tsx_preview) {
           setGeneratedTsx(response.data.tsx_preview);
         }
+
+        setSharedKnowledge(response.data.shared_knowledge);
       } catch (error: unknown) {
         console.error('Error communicating with Consultation Agent:', error);
+        toast.error('An error occurred while processing your request. Please try again.');
         setMessages(prevMessages => [...prevMessages, { role: 'ai', content: 'I apologize, but I encountered an error while processing your request. Could you please try again?' }]);
-      }
-
-      setInputMessage('');
-      setIsSending(false);
-      if (isFirstInteraction) {
-        setIsFirstInteraction(false);
+      } finally {
+        setInputMessage('');
+        setIsSending(false);
+        if (isFirstInteraction) {
+          setIsFirstInteraction(false);
+        }
       }
     }
   };
@@ -179,11 +183,15 @@ const WebSplatInterface: React.FC = () => {
     setIsEditingProjectName(false);
   };
 
-  const handleAutonomyChange = (newLevel: number) => {
+  const handleAutonomyChange = async (newLevel: number) => {
     setAutonomyLevel(newLevel);
-    // Notify the backend about the change in autonomy level
-    axios.post('http://localhost:8000/set_autonomy', { autonomy_level: newLevel })
-      .catch((error: unknown) => console.error('Error setting autonomy level:', error));
+    try {
+      await axios.post('http://localhost:8000/set_autonomy', { autonomy_level: newLevel });
+      toast.success('Autonomy level updated successfully');
+    } catch (error: unknown) {
+      console.error('Error setting autonomy level:', error);
+      toast.error('Failed to update autonomy level');
+    }
   };
 
   const sidebarItems = [
@@ -196,6 +204,7 @@ const WebSplatInterface: React.FC = () => {
   
   return (
     <div className="h-screen flex flex-col bg-[#2C2B28] text-[#888888]">
+      <Toaster position="top-right" />
       {/* Top Bar */}
       <header className="h-14 flex items-center justify-between px-4 z-10 bg-gradient-to-b from-[#2A2A2A] to-[#2C2B28]">
         <div className="flex items-center space-x-4">
@@ -291,97 +300,89 @@ const WebSplatInterface: React.FC = () => {
 
         {/* Main Content */}
         <main className={`flex-1 flex flex-col overflow-hidden bg-[#2C2B28] text-[#999999] transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
-          <div className="flex-1 flex justify-center items-center">
-            <div className="w-3/5 max-w-3xl">
-              <ScrollArea className={`h-[calc(100vh-10rem)] mt-4 ${isFirstInteraction ? 'hidden' : ''}`}>
-                {messages.map((message: Message, index: number) => (
-                  <div key={index} className={`mb-4 ${message.role === 'ai' ? 'bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl' : 'bg-[#21201C] text-[#E5E5E2] p-3 rounded-2xl'}`}>
-                    <p className={message.role === 'ai' ? 'font-tiempos text-base' : 'font-styrene text-[15px]'}>
-                      {message.content}
-                    </p>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+            <TabsList className="justify-start px-4 py-2 border-b border-[#333333]">
+              <TabsTrigger value="chat">Chat</TabsTrigger>
+              <TabsTrigger value="preview">Preview</TabsTrigger>
+            </TabsList>
+            <TabsContent value="chat" className="flex-1 flex flex-col">
+              <div className="flex-1 flex justify-center items-center">
+                <div className="w-3/5 max-w-3xl">
+                  <ScrollArea className={`h-[calc(100vh-10rem)] mt-4 ${isFirstInteraction ? 'hidden' : ''}`}>
+                    {messages.map((message: Message, index: number) => (
+                      <div key={index} className={`mb-4 ${message.role === 'ai' ? 'bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl' : 'bg-[#21201C] text-[#E5E5E2] p-3 rounded-2xl'}`}>
+                        <p className={message.role === 'ai' ? 'font-tiempos text-base' : 'font-styrene text-[15px]'}>
+                          {message.content}
+                        </p>
+                      </div>
+                    ))}
+                  </ScrollArea>
+                  <div 
+                    className={`relative transition-all duration-1000 ease-in-out ${
+                      isFirstInteraction 
+                        ? 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2' 
+                        : 'transform translate-y-0'
+                    }`}
+                  >
+                    {isFirstInteraction && (
+                      <div className="text-center mb-4">
+                        <TypewriterText text="Got a website concept? I'm here to assist." />
+                      </div>
+                    )}
+                    <form className="flex items-center space-x-2" onSubmit={handleSendMessage} role="form">
+                      <div className="relative flex-1">
+                        <Input
+                          placeholder={isFirstInteraction ? "Message Eden" : "Reply to Eden..."}
+                          className="w-full bg-[#31312E] text-[#E5E5E2] rounded-full pl-4 pr-12 py-2 focus:ring-2 focus:ring-[#444444] focus:border-transparent placeholder-[#A6A39A]"
+                          value={inputMessage}
+                          onChange={(e: ChangeEvent<HTMLInputElement>) => setInputMessage(e.target.value)}
+                          disabled={isSending}
+                        />
+                        <Button
+                          type="submit"
+                          className={`absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#A3512B] text-white hover:bg-[#B5613B] transition-all duration-300 ${isSending ? 'animate-pulse' : ''} rounded-full w-8 h-8 flex items-center justify-center opacity-0 ${inputMessage.trim() !== '' ? 'opacity-100' : ''}`}
+                          disabled={isSending || inputMessage.trim() === ''}
+                        >
+                          <ArrowUp className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </form>
                   </div>
-                ))}
-              </ScrollArea>
-              <div 
-                className={`relative transition-all duration-1000 ease-in-out ${
-                  isFirstInteraction 
-                    ? 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2' 
-                    : 'transform translate-y-0'
-                }`}
-              >
-                {isFirstInteraction && (
-                  <div className="text-center mb-4">
-                    <TypewriterText text="Got a website concept? I'm here to assist." />
-                  </div>
-                )}
-                <form className="flex items-center space-x-2" onSubmit={handleSendMessage}>
-                  <div className="relative flex-1">
-                    <Input
-                      placeholder={isFirstInteraction ? "Message Eden" : "Reply to Eden..."}
-                      className="w-full bg-[#31312E] text-[#E5E5E2] rounded-full pl-4 pr-12 py-2 focus:ring-2 focus:ring-[#444444] focus:border-transparent placeholder-[#A6A39A]"
-                      value={inputMessage}
-                      onChange={(e: ChangeEvent<HTMLInputElement>) => setInputMessage(e.target.value)}
-                    />
-                    <Button
-                      type="submit"
-                      className={`absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#A3512B] text-white hover:bg-[#B5613B] transition-all duration-300 ${isSending ? 'animate-pulse' : ''} rounded-full w-8 h-8 flex items-center justify-center opacity-0 ${inputMessage.trim() !== '' ? 'opacity-100' : ''}`}
-                      disabled={isSending || inputMessage.trim() === ''}
-                    >
-                      <ArrowUp className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </form>
+                </div>
               </div>
-            </div>
-          </div>
+            </TabsContent>
+            <TabsContent value="preview" className="flex-1 flex flex-col">
+              <div className="flex-1 p-4 overflow-auto">
+                <LiveTsxPreview tsx={generatedTsx} mode={previewMode} />
+              </div>
+              <div className="p-2 flex justify-center space-x-4">
+                <Button
+                  variant={previewMode === 'desktop' ? 'default' : 'ghost'}
+                  onClick={() => setPreviewMode('desktop')}
+                >
+                  <Laptop className="h-4 w-4 mr-2" /> Desktop
+                </Button>
+                <Button
+                  variant={previewMode === 'mobile' ? 'default' : 'ghost'}
+                  onClick={() => setPreviewMode('mobile')}
+                >
+                  <Smartphone className="h-4 w-4 mr-2" /> Mobile
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
         </main>
 
-        {/* Real-time Preview Toggle */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={togglePreview}
-          className="fixed top-1/2 right-0 transform -translate-y-1/2 z-40 bg-[#2A2A2A] hover:bg-[#3A3A3A] rounded-l-md"
-          title="Toggle Preview"
-        >
-          <PanelRightOpen className="h-5 w-5" />
-        </Button>
-
-        {/* Real-time Preview Panel */}
-        <aside className={`fixed inset-0 bg-[#2A2A2A] text-[#888888] transition-transform duration-300 ease-in-out ${previewOpen ? 'translate-x-0' : 'translate-x-full'} z-50`}>
-          <div className="h-14 border-b border-[#333333] flex items-center justify-between px-4">
-            <h2 className="font-semibold">Real-time Preview</h2>
-            <div className="flex space-x-2">
-              <Button
-                variant={previewMode === 'desktop' ? 'default' : 'ghost'}
-                size="icon"
-                onClick={() => setPreviewMode('desktop')}
-              >
-                <Laptop className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={previewMode === 'mobile' ? 'default' : 'ghost'}
-                size="icon"
-                onClick={() => setPreviewMode('mobile')}
-              >
-                <Smartphone className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={togglePreview}
-                className="ml-4"
-              >
-                <PanelRightOpen className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-          <div className="flex-1 p-4 overflow-auto h-[calc(100vh-3.5rem)]">
-            <LiveTsxPreview tsx={generatedTsx} mode={previewMode} />
-          </div>
-          <div className="p-2 text-sm text-[#777777] text-center">
-            Note: This preview updates live as the AI generates the website code.
-          </div>
+        {/* Shared Knowledge Panel */}
+        <aside className="fixed bottom-0 left-0 w-full bg-[#2A2A2A] text-[#888888] p-4 border-t border-[#333333]">
+          <h3 className="font-semibold mb-2">Shared Knowledge</h3>
+          <ScrollArea className="h-32">
+            {Object.entries(sharedKnowledge).map(([key, value]) => (
+              <div key={key} className="mb-2">
+                <strong>{key}:</strong> {JSON.stringify(value)}
+              </div>
+            ))}
+          </ScrollArea>
         </aside>
       </div>
     </div>
