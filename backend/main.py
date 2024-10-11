@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
 from autogen_agents import create_website, set_autonomy_level, generate_progress_report, explain_strategy
@@ -6,6 +7,15 @@ import asyncio
 import logging
 
 app = FastAPI()
+
+# Set up CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Allow requests from the frontend
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -30,6 +40,10 @@ class StrategyExplanationRequest(BaseModel):
 
 class StrategyExplanationResponse(BaseModel):
     explanation: str
+
+@app.options("/consult")
+async def options_consult():
+    return {"message": "OK"}
 
 @app.post("/consult", response_model=ConsultationResponse)
 async def consult(request: ConsultationRequest):

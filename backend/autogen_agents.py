@@ -1,9 +1,14 @@
+import sys
+import os
+
+# Add the parent directory to the Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from ai_ml_client import ai_ml_client
 from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
 from typing import Dict, Any, List
 import os
 import logging
 from dotenv import load_dotenv
-from ai_ml_client import ai_ml_client
 from google.cloud import aiplatform
 import openai
 from tavily import TavilyClient
@@ -179,7 +184,7 @@ user_proxy = UserProxyAgent(
     human_input_mode="NEVER",
     max_consecutive_auto_reply=10,
     is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
-    code_execution_config={"work_dir": "web_project"},
+    code_execution_config={"work_dir": "web_project", "use_docker": False},  # Disable Docker usage
     system_message="You are a proxy for the end-user, initiating the website creation process and providing necessary information and feedback."
 )
 
