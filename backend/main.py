@@ -4,6 +4,7 @@ from typing import Optional, Dict, Any, List
 from autogen_agents import create_website, set_autonomy_level, generate_progress_report, explain_strategy
 import asyncio
 import logging
+import json
 
 app = FastAPI()
 
@@ -31,11 +32,35 @@ class StrategyExplanationRequest(BaseModel):
 class StrategyExplanationResponse(BaseModel):
     explanation: str
 
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if callable(obj):
+            return f"<function {obj.__name__}>"
+        return super().default(obj)
+
+def make_serializable(obj):
+    try:
+        json.dumps(obj, cls=CustomJSONEncoder)
+        return obj
+    except TypeError:
+        if isinstance(obj, dict):
+            return {k: make_serializable(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [make_serializable(i) for i in obj]
+        elif hasattr(obj, '__dict__'):
+            return {k: make_serializable(v) for k, v in obj.__dict__.items() if not k.startswith('_')}
+        else:
+            return str(obj)
+
 @app.post("/consult", response_model=ConsultationResponse)
 async def consult(request: ConsultationRequest):
     try:
         # Run the create_website function in a separate thread to avoid blocking
         result = await asyncio.to_thread(create_website, request.message, request.autonomy_level)
+        
+        # Make the shared_knowledge serializable
+        result['shared_knowledge'] = make_serializable(result['shared_knowledge'])
+        
         return ConsultationResponse(**result)
     except Exception as e:
         logging.error(f"Error in consult endpoint: {e}")
