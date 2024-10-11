@@ -1,5 +1,8 @@
 import sys
 import os
+import json 
+import inspect
+import traceback
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -14,7 +17,7 @@ import openai
 from tavily import TavilyClient
 
 # Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Load environment variables
 load_dotenv()
@@ -34,6 +37,19 @@ AUTONOMY_LEVEL = 50
 SHARED_KNOWLEDGE = {}
 TASK_QUEUE = []
 
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if callable(obj):
+            return f"<function {obj.__name__}>"
+        elif inspect.isclass(obj):
+            return f"<class {obj.__name__}>"
+        elif isinstance(obj, AssistantAgent):
+            return f"<AssistantAgent {obj.name}>"
+        elif isinstance(obj, UserProxyAgent):
+            return f"<UserProxyAgent {obj.name}>"
+        elif isinstance(obj, GroupChat):
+            return self.serialize_groupchat(obj)
+        
 def set_autonomy_level(level: int):
     global AUTONOMY_LEVEL
     AUTONOMY_LEVEL = level
@@ -73,9 +89,14 @@ def perplexity_call(prompt: str) -> str:
     try:
         response = openai.ChatCompletion.create(
             model="perplexity/llama-3.1-sonar-huge-128k-online",
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=1000,
+            temperature=0.7
         )
         return response.choices[0].message.content
+    except openai.error.AuthenticationError as e:
+        logging.error(f"OpenRouter authentication failed: {e}")
+        return "Perplexity API call failed due to authentication error"
     except Exception as e:
         logging.error(f"OpenRouter call failed: {e}")
         return "Perplexity API call failed"
@@ -87,9 +108,25 @@ def web_search(query: str) -> List[Dict[str, str]]:
     except Exception as e:
         logging.error(f"Tavily search failed: {e}")
         return []
+    
+# Define a dictionary to map function names to actual functions
+FUNCTION_MAP = {
+    "o1_call": o1_call,
+    "o1_mini_call": o1_mini_call,
+    "claude_vertex_call": claude_vertex_call,
+    "vertex_ai_call": vertex_ai_call,
+    "perplexity_call": perplexity_call,
+    "web_search": web_search
+}
 
 class EnhancedAssistantAgent(AssistantAgent):
     def __init__(self, name: str, system_message: str, llm_config: Dict[str, Any]):
+        # Convert the function to a string identifier
+        if "function" in llm_config and callable(llm_config["function"]):
+            llm_config["function"] = next(
+                (name for name, func in FUNCTION_MAP.items() if func == llm_config["function"]),
+                "unknown_function"
+            )
         super().__init__(name=name, system_message=system_message, llm_config=llm_config)
         self.tasks = []
         self.completed_tasks = []
@@ -115,14 +152,46 @@ class EnhancedAssistantAgent(AssistantAgent):
         logging.info(f"{self.name} delegated task '{task}' to {target_agent.name}")
 
     def request_information(self, query: str, target_agent: 'EnhancedAssistantAgent') -> str:
-        response = target_agent.llm_config["function"](f"{self.name} requests: {query}")
-        logging.info(f"{self.name} requested information from {target_agent.name}: {query}")
-        return response
+        function_name = agent.llm_config["function"]
+        function = FUNCTION_MAP.get(function_name)
+        if function:
+            result = function(task_description)
+            agent.update_shared_knowledge(task_description, result)
+        else:
+            logging.error(f"Unknown function: {function_name}")
+            result = f"Error: Unknown function {function_name}"
+
 
     def request_reasoning(self, query: str, o1_agent: 'EnhancedAssistantAgent') -> str:
-        response = o1_agent.llm_config["function"](f"Reasoning request from {self.name}: {query}")
-        logging.info(f"{self.name} requested reasoning from O1 agent: {query}")
-        return response
+        function_name = o1_agent.llm_config["function"]
+        function = FUNCTION_MAP.get(function_name)
+        if function:
+            response = function(f"Reasoning request from {self.name}: {query}")
+            logging.info(f"{self.name} requested reasoning from O1 agent: {query}")
+            return response
+        else:
+            logging.error(f"Unknown function: {function_name}")
+            return f"Error: Unknown function {function_name}"
+    
+    def serialize_groupchat(self, groupchat):
+        return {
+            "agents": [agent.name for agent in groupchat.agents],
+            "messages": [self.serialize_message(msg) for msg in groupchat.messages],
+            "max_round": groupchat.max_round
+        }
+
+    def serialize_message(self, message):
+        return {
+            "sender": message.get("sender", "Unknown"),
+            "content": message.get("content", "")
+        }
+
+def serialize_shared_knowledge(shared_knowledge: Dict[str, Any]) -> Dict[str, Any]:
+    try:
+        return json.loads(json.dumps(shared_knowledge, cls=CustomJSONEncoder))
+    except Exception as e:
+        logging.error(f"Error serializing shared knowledge: {e}")
+        return {"error": "Failed to serialize shared knowledge"}
 
 # Create enhanced agent instances
 o1_agent = EnhancedAssistantAgent(
@@ -189,7 +258,7 @@ user_proxy = UserProxyAgent(
 )
 
 def create_website(user_requirements: str, autonomy_level: int) -> Dict[str, Any]:
-    global AUTONOMY_LEVEL
+    global AUTONOMY_LEVEL, SHARED_KNOWLEDGE
     AUTONOMY_LEVEL = autonomy_level
     logging.info(f"Starting website creation with autonomy level: {AUTONOMY_LEVEL}")
 
@@ -259,18 +328,38 @@ def create_website(user_requirements: str, autonomy_level: int) -> Dict[str, Any
         consultation_response = extract_consultation_response(groupchat.messages)
         tsx_preview = extract_tsx_preview(groupchat.messages)
 
-        return {
+        serialized_knowledge = serialize_shared_knowledge(SHARED_KNOWLEDGE)
+        
+        result = {
             "message": consultation_response,
             "tsx_preview": tsx_preview,
-            "shared_knowledge": SHARED_KNOWLEDGE
+            "shared_knowledge": serialized_knowledge
         }
+
+        # Attempt to serialize the result to catch any JSON serialization errors
+        try:
+            json.dumps(result, cls=CustomJSONEncoder)
+        except TypeError as e:
+            logging.error(f"JSON serialization error: {e}")
+            logging.error(f"Traceback: {traceback.format_exc()}")
+            return {
+                "message": f"An error occurred while serializing the result: {str(e)}",
+                "tsx_preview": "No TSX preview available.",
+                "shared_knowledge": {},
+                "error_details": traceback.format_exc()
+            }
+
+        return result
     except Exception as e:
         logging.error(f"Error in create_website: {e}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
         return {
-            "message": "An error occurred while creating the website.",
-            "tsx_preview": "() => <div>Error: Unable to generate preview</div>",
-            "shared_knowledge": {}
+            "message": f"An error occurred while creating the website: {str(e)}",
+            "tsx_preview": "No TSX preview available yet.",
+            "shared_knowledge": {},
+            "error_details": traceback.format_exc()
         }
+
 
 def extract_consultation_response(messages: list) -> str:
     for message in reversed(messages):
@@ -284,7 +373,7 @@ def extract_tsx_preview(messages: list) -> str:
             start = message["content"].index("```tsx") + 6
             end = message["content"].index("```", start)
             return message["content"][start:end].strip()
-    return "() => <div>No TSX preview available yet.</div>"
+    return "No TSX preview available yet."
 
 # New functions for progress report and strategy explanation
 def generate_progress_report() -> str:
@@ -317,9 +406,15 @@ def explain_strategy(strategy_type: str) -> str:
     return strategy_explanations.get(strategy_type.lower(), "Strategy type not recognized. Available types are: monetization, seo, ui_design, development, content.")
 
 if __name__ == "__main__":
-    result = create_website("Create a landing page for a new fitness app targeting young professionals.", 50)
-    print(result)
-    print("\nProgress Report:")
-    print(generate_progress_report())
-    print("\nMonetization Strategy Explanation:")
-    print(explain_strategy("monetization"))
+    try:
+        result = create_website("Create a landing page for a new fitness app targeting young professionals.", 50)
+        print(json.dumps(result, indent=2, cls=CustomJSONEncoder))
+        print("\nProgress Report:")
+        print(generate_progress_report())
+        print("\nMonetization Strategy Explanation:")
+        print(explain_strategy("monetization"))
+    except Exception as e:
+        logging.error(f"Main execution error: {e}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
+        print(f"An error occurred: {str(e)}")
+        print(f"Error details:\n{traceback.format_exc()}")
