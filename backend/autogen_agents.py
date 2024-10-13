@@ -46,6 +46,13 @@ AUTONOMY_LEVEL = 50
 SHARED_KNOWLEDGE = {}
 TASK_QUEUE = []
 
+# Define a separate, simplified config for GroupChatManager without 'function'
+manager_llm_config = {
+    "config_list": [{"model": "gpt-3.5-turbo"}],
+    "temperature": 0.7,
+    "request_timeout": 120
+}
+
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if callable(obj):
@@ -58,6 +65,7 @@ class CustomJSONEncoder(json.JSONEncoder):
             return f"<UserProxyAgent {obj.name}>"
         elif isinstance(obj, GroupChat):
             return self.serialize_groupchat(obj)
+        return super().default(obj)
         
 def set_autonomy_level(level: int):
     global AUTONOMY_LEVEL
@@ -169,6 +177,7 @@ class EnhancedAssistantAgent(AssistantAgent):
         super().__init__(name=name, system_message=system_message, llm_config=custom_llm_config)
         self.tasks = []
         self.completed_tasks = []
+        self.confidence_score = 0  # Initialize confidence score
 
     def generate_reply(self, messages: List[Dict[str, Any]], sender: Any, config: Dict[str, Any]) -> str:
         try:
@@ -235,6 +244,11 @@ class EnhancedAssistantAgent(AssistantAgent):
             "sender": message.get("sender", "Unknown"),
             "content": message.get("content", "")
         }
+        
+    def select_speaker(self, agents=None):
+        agents = agents if agents is not None else self.agents
+        selected_agent = max(agents, key=lambda agent: agent.confidence_score)
+        return selected_agent
 
 def serialize_shared_knowledge(shared_knowledge: Dict[str, Any]) -> Dict[str, Any]:
     try:
@@ -253,11 +267,17 @@ class DevelopmentEnvironment:
     def get_updates(self) -> Dict[str, str]:
         return self.updates
 
-# Create enhanced agent instances
+# Create enhanced agent instances with updated llm_config
+llm_config = {
+    "model": "gpt-3.5-turbo",
+    "temperature": 0.7,
+    "function": o1_call  # Set this based on your specific function
+}
+
 o1_agent = EnhancedAssistantAgent(
     name="O1_Agent",
     system_message="You are the central reasoning agent powered by the O1 model. Your role is to provide high-level reasoning, strategic planning, and decision-making support for the website creation process. You cannot process images, search the web, or use external tools. Focus on analyzing information, providing insights, and guiding the overall strategy.",
-    llm_config={"function": o1_call, "model": "openai/gpt-4"}
+    llm_config=llm_config
 )
 
 head_project_manager = EnhancedAssistantAgent(
@@ -330,71 +350,43 @@ def create_website(user_requirements: str, autonomy_level: int) -> Dict[str, Any
     elif AUTONOMY_LEVEL > 70:
         head_project_manager.system_message += " Make more autonomous decisions with minimal consultation."
 
-    # Initialize task queue
-    head_project_manager.add_task("Analyze user requirements and create high-level project plan", 3)
-    head_project_manager.add_task("Delegate initial tasks to appropriate agents", 2)
-
-    groupchat = GroupChat(
-        agents=[user_proxy, o1_agent, head_project_manager, frontend_designer, lead_developer, consultation_agent, user_content_manager, monetization_agent, seo_agent, research_agent],
-        messages=[],
-        max_round=50
-    )
-    manager = GroupChatManager(groupchat=groupchat)
+    # Create a list of agents
+    agents = [user_proxy, o1_agent, head_project_manager, frontend_designer, lead_developer, consultation_agent, user_content_manager, monetization_agent, seo_agent, research_agent]
 
     try:
-        # Initiate the chat with user requirements
-        user_proxy.initiate_chat(
-            manager,
-            message=f"Create a website with the following requirements: {user_requirements}"
-        )
-
-        # Process tasks in the queue
-        while True:
-            active_agents = [agent for agent in groupchat.agents if isinstance(agent, EnhancedAssistantAgent) and agent.tasks]
-            if not active_agents:
+        # Initialize the chat with user requirements
+        chat_messages = [{"role": "user", "content": f"Create a website with the following requirements: {user_requirements}"}]
+        
+        # Simulate the group chat
+        for _ in range(50):  # Max 50 rounds
+            for agent in agents:
+                if isinstance(agent, EnhancedAssistantAgent):
+                    # Generate reply
+                    reply = agent.generate_reply(chat_messages, sender=user_proxy, config={})
+                    chat_messages.append({"role": "assistant", "content": reply, "name": agent.name})
+                    
+                    # Process tasks
+                    while agent.tasks:
+                        task = agent.get_next_task()
+                        logging.info(f"{agent.name} is working on task: {task['task']}")
+                        
+                        # Execute the task
+                        result = FUNCTION_MAP.get(agent.function_name, lambda x: f"Error: Unknown function {agent.function_name}")(task['task'])
+                        
+                        # Update shared knowledge and development environment
+                        agent.update_shared_knowledge(task['task'], result)
+                        dev_env.receive_update(agent.name, result)
+                        
+                        # Complete the task
+                        agent.complete_task(task)
+                
+                # Check for termination condition
+                if agent._is_termination_msg(chat_messages[-1]):
+                    break
+            
+            # Check for overall termination
+            if any(agent._is_termination_msg(chat_messages[-1]) for agent in agents):
                 break
-
-            for agent in active_agents:
-                next_task = agent.get_next_task()
-                if next_task:
-                    task_description = next_task["task"]
-                    logging.info(f"{agent.name} is working on task: {task_description}")
-                    
-                    # Request reasoning from O1 agent for complex tasks
-                    if agent != o1_agent and ("analyze" in task_description.lower() or "strategy" in task_description.lower()):
-                        reasoning = agent.request_reasoning(task_description, o1_agent)
-                        logging.info(f"O1 reasoning for {agent.name}'s task: {reasoning}")
-                    
-                    # Check if the agent needs information from another agent
-                    if "request information from" in task_description.lower():
-                        target_agent_name = task_description.split("from")[-1].strip()
-                        target_agent = next((a for a in groupchat.agents if a.name == target_agent_name), None)
-                        if target_agent:
-                            info = agent.request_information(task_description, target_agent)
-                            agent.update_shared_knowledge(task_description, info)
-                    else:
-                        function = FUNCTION_MAP.get(agent.function_name)
-                        if function:
-                            result = function(task_description)
-                            agent.update_shared_knowledge(task_description, result)
-                            dev_env.receive_update(agent.name, result)
-                        else:
-                            logging.error(f"Unknown function: {agent.function_name}")
-                            result = f"Error: Unknown function {agent.function_name}"
-                    
-                    agent.complete_task(next_task)
-                    
-                    # Check if the agent needs to delegate a task
-                    if "delegate" in result.lower():
-                        delegation_info = result.split("delegate")[-1].strip()
-                        target_agent_name, delegated_task = delegation_info.split(":", 1)
-                        target_agent = next((a for a in groupchat.agents if a.name == target_agent_name.strip()), None)
-                        if target_agent:
-                            agent.delegate_task(delegated_task.strip(), target_agent)
-
-                    # Update Consultation Agent with Development Environment updates
-                    if agent != consultation_agent:
-                        consultation_agent.update_shared_knowledge(f"{agent.name}_update", result)
 
         # Compile results
         compiled_results = consultation_agent.get_shared_knowledge("compiled_results")
@@ -402,10 +394,9 @@ def create_website(user_requirements: str, autonomy_level: int) -> Dict[str, Any
             compiled_results = FUNCTION_MAP[consultation_agent.function_name]("Compile the final results of the website creation process based on all agent updates and shared knowledge.")
             consultation_agent.update_shared_knowledge("compiled_results", compiled_results)
 
-        # Extract relevant information from the chat history
-        consultation_response = extract_consultation_response(groupchat.messages)
-        tsx_preview = extract_tsx_preview(groupchat.messages)
-
+        # Extract relevant information
+        consultation_response = extract_consultation_response(chat_messages)
+        tsx_preview = extract_tsx_preview(chat_messages)
         serialized_knowledge = serialize_shared_knowledge(SHARED_KNOWLEDGE)
         
         result = {
@@ -415,7 +406,7 @@ def create_website(user_requirements: str, autonomy_level: int) -> Dict[str, Any
             "compiled_results": compiled_results
         }
 
-        # Attempt to serialize the result to catch any JSON serialization errors
+        # Attempt to serialize the result
         try:
             json.dumps(result, cls=CustomJSONEncoder)
         except TypeError as e:
