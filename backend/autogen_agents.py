@@ -3,10 +3,10 @@ import os
 import json 
 import inspect
 import traceback
+import requests
 
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from ai_ml_client import ai_ml_client
 from autogen import AssistantAgent, UserProxyAgent, GroupChat, GroupChatManager
 from typing import Dict, Any, List
 import os
@@ -15,9 +15,10 @@ from dotenv import load_dotenv
 from google.cloud import aiplatform
 import openai
 from tavily import TavilyClient
+import anthropic
 
 # Set up logging
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Load environment variables
 load_dotenv()
@@ -26,11 +27,19 @@ load_dotenv()
 aiplatform.init(project=os.getenv("GOOGLE_CLOUD_PROJECT"), location="us-central1")
 
 # Initialize OpenRouter client
-openai.api_key = os.getenv("OPENROUTER_API_KEY")
-openai.api_base = "https://openrouter.ai/api/v1"
+openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
+if not openrouter_api_key:
+    logging.error("OPENROUTER_API_KEY not found in environment variables")
+    raise ValueError("OPENROUTER_API_KEY not found in environment variables")
 
 # Initialize Tavily client
 tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
+
+# Initialize Anthropic client
+anthropic_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+
+# Initialize Perplexity client
+perplexity_api_key = os.getenv("PERPLEXITY_API_KEY")
 
 # Global variables
 AUTONOMY_LEVEL = 50
@@ -55,24 +64,37 @@ def set_autonomy_level(level: int):
     AUTONOMY_LEVEL = level
     logging.info(f"Autonomy level set to {AUTONOMY_LEVEL}")
 
-def o1_mini_call(prompt: str) -> str:
+def openrouter_call(prompt: str, model: str) -> str:
     try:
-        return ai_ml_client.generate_response(prompt, "o1-mini")
+        headers = {
+            "Authorization": f"Bearer {openrouter_api_key}",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "model": model,
+            "messages": [{"role": "user", "content": prompt}]
+        }
+        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
+        response.raise_for_status()
+        return response.json()['choices'][0]['message']['content']
     except Exception as e:
-        logging.error(f"Error in o1_mini_call: {e}")
-        return "Error in o1_mini_call"
+        logging.error(f"OpenRouter API call failed: {e}")
+        return f"OpenRouter API call failed: {str(e)}"
+
+def o1_mini_call(prompt: str) -> str:
+    return openrouter_call(prompt, "mistralai/mistral-7b-instruct")
 
 def o1_call(prompt: str) -> str:
-    try:
-        return ai_ml_client.generate_response(prompt, "o1")
-    except Exception as e:
-        logging.error(f"Error in o1_call: {e}")
-        return "Error in o1_call"
+    return openrouter_call(prompt, "openai/gpt-4")
 
 def claude_vertex_call(prompt: str) -> str:
     try:
-        response = aiplatform.ChatModel.from_pretrained("claude-3-sonnet@001").predict(prompt=prompt)
-        return response.text
+        completion = anthropic_client.completions.create(
+            model="claude-3-sonnet-20240229",
+            max_tokens_to_sample=1000,
+            prompt=f"\n\nHuman: {prompt}\n\nAssistant:",
+        )
+        return completion.completion
     except Exception as e:
         logging.error(f"Error in claude_vertex_call: {e}")
         return "Error in claude_vertex_call"
@@ -87,18 +109,19 @@ def vertex_ai_call(prompt: str) -> str:
 
 def perplexity_call(prompt: str) -> str:
     try:
-        response = openai.ChatCompletion.create(
-            model="perplexity/llama-3.1-sonar-huge-128k-online",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=1000,
-            temperature=0.7
-        )
-        return response.choices[0].message.content
-    except openai.error.AuthenticationError as e:
-        logging.error(f"OpenRouter authentication failed: {e}")
-        return "Perplexity API call failed due to authentication error"
+        headers = {
+            "Authorization": f"Bearer {perplexity_api_key}",
+            "Content-Type": "application/json"
+        }
+        data = {
+            "model": "sonar-medium-online",
+            "messages": [{"role": "user", "content": prompt}]
+        }
+        response = requests.post("https://api.perplexity.ai/chat/completions", headers=headers, json=data)
+        response.raise_for_status()
+        return response.json()['choices'][0]['message']['content']
     except Exception as e:
-        logging.error(f"OpenRouter call failed: {e}")
+        logging.error(f"Perplexity API call failed: {e}")
         return "Perplexity API call failed"
 
 def web_search(query: str) -> List[Dict[str, str]]:
@@ -119,6 +142,7 @@ FUNCTION_MAP = {
     "web_search": web_search
 }
 
+
 class EnhancedAssistantAgent(AssistantAgent):
     def __init__(self, name: str, system_message: str, llm_config: Dict[str, Any]):
         # Convert the function to a string identifier
@@ -127,9 +151,37 @@ class EnhancedAssistantAgent(AssistantAgent):
                 (name for name, func in FUNCTION_MAP.items() if func == llm_config["function"]),
                 "unknown_function"
             )
-        super().__init__(name=name, system_message=system_message, llm_config=llm_config)
+        
+        # Ensure the llm_config has the required fields
+        llm_config.setdefault("model", "gpt-3.5-turbo")  # Default model
+        llm_config.setdefault("temperature", 0.7)  # Default temperature
+        
+        # Remove the 'function' key from llm_config before passing it to the parent class
+        self.function_name = llm_config.pop("function", None)
+        
+        # Create a custom config that doesn't rely on OpenAI's API
+        custom_llm_config = {
+            "config_list": [{"model": llm_config["model"]}],
+            "temperature": llm_config["temperature"],
+            "request_timeout": 120,
+        }
+        
+        super().__init__(name=name, system_message=system_message, llm_config=custom_llm_config)
         self.tasks = []
         self.completed_tasks = []
+
+    def generate_reply(self, messages: List[Dict[str, Any]], sender: Any, config: Dict[str, Any]) -> str:
+        try:
+            function = FUNCTION_MAP.get(self.function_name)
+            if function:
+                prompt = self.system_message + "\n\n" + "\n".join([f"{m['role']}: {m['content']}" for m in messages])
+                return function(prompt)
+            else:
+                logging.error(f"Unknown function: {self.function_name}")
+                return f"Error: Unknown function {self.function_name}"
+        except Exception as e:
+            logging.error(f"Error in generate_reply: {e}")
+            return f"Error in generate_reply: {str(e)}"
 
     def add_task(self, task: str, priority: int = 1):
         self.tasks.append({"task": task, "priority": priority})
@@ -152,26 +204,24 @@ class EnhancedAssistantAgent(AssistantAgent):
         logging.info(f"{self.name} delegated task '{task}' to {target_agent.name}")
 
     def request_information(self, query: str, target_agent: 'EnhancedAssistantAgent') -> str:
-        function_name = agent.llm_config["function"]
-        function = FUNCTION_MAP.get(function_name)
+        function = FUNCTION_MAP.get(self.function_name)
         if function:
-            result = function(task_description)
-            agent.update_shared_knowledge(task_description, result)
+            result = function(query)
+            self.update_shared_knowledge(query, result)
+            return result
         else:
-            logging.error(f"Unknown function: {function_name}")
-            result = f"Error: Unknown function {function_name}"
-
+            logging.error(f"Unknown function: {self.function_name}")
+            return f"Error: Unknown function {self.function_name}"
 
     def request_reasoning(self, query: str, o1_agent: 'EnhancedAssistantAgent') -> str:
-        function_name = o1_agent.llm_config["function"]
-        function = FUNCTION_MAP.get(function_name)
+        function = FUNCTION_MAP.get(o1_agent.function_name)
         if function:
             response = function(f"Reasoning request from {self.name}: {query}")
             logging.info(f"{self.name} requested reasoning from O1 agent: {query}")
             return response
         else:
-            logging.error(f"Unknown function: {function_name}")
-            return f"Error: Unknown function {function_name}"
+            logging.error(f"Unknown function: {o1_agent.function_name}")
+            return f"Error: Unknown function {o1_agent.function_name}"
     
     def serialize_groupchat(self, groupchat):
         return {
@@ -193,59 +243,69 @@ def serialize_shared_knowledge(shared_knowledge: Dict[str, Any]) -> Dict[str, An
         logging.error(f"Error serializing shared knowledge: {e}")
         return {"error": "Failed to serialize shared knowledge"}
 
+class DevelopmentEnvironment:
+    def __init__(self):
+        self.updates = {}
+
+    def receive_update(self, agent_name: str, update: str):
+        self.updates[agent_name] = update
+
+    def get_updates(self) -> Dict[str, str]:
+        return self.updates
+
 # Create enhanced agent instances
 o1_agent = EnhancedAssistantAgent(
     name="O1_Agent",
     system_message="You are the central reasoning agent powered by the O1 model. Your role is to provide high-level reasoning, strategic planning, and decision-making support for the website creation process. You cannot process images, search the web, or use external tools. Focus on analyzing information, providing insights, and guiding the overall strategy.",
-    llm_config={"function": o1_call}
+    llm_config={"function": o1_call, "model": "openai/gpt-4"}
 )
 
 head_project_manager = EnhancedAssistantAgent(
     name="Head_Project_Manager",
     system_message="You are the head project manager overseeing the website creation process. Coordinate with the O1 agent for high-level reasoning and strategic decisions. Manage task delegation and ensure the project meets the user's requirements.",
-    llm_config={"function": o1_mini_call}
+    llm_config={"function": o1_mini_call, "model": "mistralai/mistral-7b-instruct"}
 )
 
 frontend_designer = EnhancedAssistantAgent(
     name="Frontend_Designer",
     system_message="Create the visual design and layout of the website based on user requirements and best UX/UI practices.",
-    llm_config={"function": vertex_ai_call}
+    llm_config={"function": vertex_ai_call, "model": "chat-bison@001"}
 )
 
 lead_developer = EnhancedAssistantAgent(
     name="Lead_Developer",
     system_message="Translate designs into functional code and oversee the technical implementation of the website.",
-    llm_config={"function": claude_vertex_call}
+    llm_config={"function": claude_vertex_call, "model": "claude-3-sonnet-20240229"}
 )
 
 consultation_agent = EnhancedAssistantAgent(
     name="Consultation_Agent",
     system_message="You are the primary interface with the user. Gather requirements, provide updates on the website creation process, and communicate major milestones in natural language.",
-    llm_config={"function": claude_vertex_call}
+    llm_config={"function": claude_vertex_call, "model": "claude-3-sonnet-20240229"}
 )
 
 user_content_manager = EnhancedAssistantAgent(
     name="User_Content_Manager",
     system_message="Manage and integrate user-provided content into the website, including text and media.",
-    llm_config={"function": claude_vertex_call}
+    llm_config={"function": claude_vertex_call, "model": "claude-3-sonnet-20240229"}
 )
 
 monetization_agent = EnhancedAssistantAgent(
     name="Monetization_Agent",
     system_message="Develop monetization strategies for the website based on its purpose and target audience.",
-    llm_config={"function": perplexity_call}
+    llm_config={"function": perplexity_call, "model": "sonar-medium-online"}
 )
 
 seo_agent = EnhancedAssistantAgent(
     name="SEO_Agent",
     system_message="Optimize the website for search engines, providing recommendations for improved visibility and ranking.",
-    llm_config={"function": perplexity_call}
+    llm_config={"function": perplexity_call, "model": "sonar-medium-online"}
 )
 
 research_agent = EnhancedAssistantAgent(
     name="Research_Agent",
     system_message="Conduct web searches to gather relevant information for the website creation process.",
-    llm_config={"function": web_search}
+    llm_config={"function": web_search, "model": "web_search"}
 )
 
 user_proxy = UserProxyAgent(
@@ -261,6 +321,8 @@ def create_website(user_requirements: str, autonomy_level: int) -> Dict[str, Any
     global AUTONOMY_LEVEL, SHARED_KNOWLEDGE
     AUTONOMY_LEVEL = autonomy_level
     logging.info(f"Starting website creation with autonomy level: {AUTONOMY_LEVEL}")
+
+    dev_env = DevelopmentEnvironment()
 
     # Adjust agent behavior based on autonomy level
     if AUTONOMY_LEVEL < 30:
@@ -299,7 +361,7 @@ def create_website(user_requirements: str, autonomy_level: int) -> Dict[str, Any
                     logging.info(f"{agent.name} is working on task: {task_description}")
                     
                     # Request reasoning from O1 agent for complex tasks
-                    if agent != o1_agent and "analyze" in task_description.lower() or "strategy" in task_description.lower():
+                    if agent != o1_agent and ("analyze" in task_description.lower() or "strategy" in task_description.lower()):
                         reasoning = agent.request_reasoning(task_description, o1_agent)
                         logging.info(f"O1 reasoning for {agent.name}'s task: {reasoning}")
                     
@@ -311,8 +373,14 @@ def create_website(user_requirements: str, autonomy_level: int) -> Dict[str, Any
                             info = agent.request_information(task_description, target_agent)
                             agent.update_shared_knowledge(task_description, info)
                     else:
-                        result = agent.llm_config["function"](task_description)
-                        agent.update_shared_knowledge(task_description, result)
+                        function = FUNCTION_MAP.get(agent.function_name)
+                        if function:
+                            result = function(task_description)
+                            agent.update_shared_knowledge(task_description, result)
+                            dev_env.receive_update(agent.name, result)
+                        else:
+                            logging.error(f"Unknown function: {agent.function_name}")
+                            result = f"Error: Unknown function {agent.function_name}"
                     
                     agent.complete_task(next_task)
                     
@@ -324,6 +392,16 @@ def create_website(user_requirements: str, autonomy_level: int) -> Dict[str, Any
                         if target_agent:
                             agent.delegate_task(delegated_task.strip(), target_agent)
 
+                    # Update Consultation Agent with Development Environment updates
+                    if agent != consultation_agent:
+                        consultation_agent.update_shared_knowledge(f"{agent.name}_update", result)
+
+        # Compile results
+        compiled_results = consultation_agent.get_shared_knowledge("compiled_results")
+        if not compiled_results:
+            compiled_results = FUNCTION_MAP[consultation_agent.function_name]("Compile the final results of the website creation process based on all agent updates and shared knowledge.")
+            consultation_agent.update_shared_knowledge("compiled_results", compiled_results)
+
         # Extract relevant information from the chat history
         consultation_response = extract_consultation_response(groupchat.messages)
         tsx_preview = extract_tsx_preview(groupchat.messages)
@@ -333,7 +411,8 @@ def create_website(user_requirements: str, autonomy_level: int) -> Dict[str, Any
         result = {
             "message": consultation_response,
             "tsx_preview": tsx_preview,
-            "shared_knowledge": serialized_knowledge
+            "shared_knowledge": serialized_knowledge,
+            "compiled_results": compiled_results
         }
 
         # Attempt to serialize the result to catch any JSON serialization errors
@@ -346,6 +425,7 @@ def create_website(user_requirements: str, autonomy_level: int) -> Dict[str, Any
                 "message": f"An error occurred while serializing the result: {str(e)}",
                 "tsx_preview": "No TSX preview available.",
                 "shared_knowledge": {},
+                "compiled_results": "Error in compiling results.",
                 "error_details": traceback.format_exc()
             }
 
@@ -357,9 +437,9 @@ def create_website(user_requirements: str, autonomy_level: int) -> Dict[str, Any
             "message": f"An error occurred while creating the website: {str(e)}",
             "tsx_preview": "No TSX preview available yet.",
             "shared_knowledge": {},
+            "compiled_results": "Error in compiling results.",
             "error_details": traceback.format_exc()
         }
-
 
 def extract_consultation_response(messages: list) -> str:
     for message in reversed(messages):
@@ -396,17 +476,18 @@ def generate_progress_report() -> str:
 
 def explain_strategy(strategy_type: str) -> str:
     strategy_explanations = {
-        "monetization": monetization_agent.llm_config["function"]("Explain the current monetization strategy for the website"),
-        "seo": seo_agent.llm_config["function"]("Explain the current SEO strategy for the website"),
-        "ui_design": frontend_designer.llm_config["function"]("Explain the current UI design strategy for the website"),
-        "development": lead_developer.llm_config["function"]("Explain the current development strategy for the website"),
-        "content": user_content_manager.llm_config["function"]("Explain the current content management strategy for the website"),
+        "monetization": FUNCTION_MAP[monetization_agent.function_name]("Explain the current monetization strategy for the website"),
+        "seo": FUNCTION_MAP[seo_agent.function_name]("Explain the current SEO strategy for the website"),
+        "ui_design": FUNCTION_MAP[frontend_designer.function_name]("Explain the current UI design strategy for the website"),
+        "development": FUNCTION_MAP[lead_developer.function_name]("Explain the current development strategy for the website"),
+        "content": FUNCTION_MAP[user_content_manager.function_name]("Explain the current content management strategy for the website"),
     }
     
     return strategy_explanations.get(strategy_type.lower(), "Strategy type not recognized. Available types are: monetization, seo, ui_design, development, content.")
 
 if __name__ == "__main__":
     try:
+        logging.debug(f"OpenRouter API Key: {openrouter_api_key[:5]}...{openrouter_api_key[-5:]}")  # Log first and last 5 characters of the API key
         result = create_website("Create a landing page for a new fitness app targeting young professionals.", 50)
         print(json.dumps(result, indent=2, cls=CustomJSONEncoder))
         print("\nProgress Report:")

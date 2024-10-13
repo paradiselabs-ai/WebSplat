@@ -2,9 +2,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
-from autogen_agents import create_website, set_autonomy_level, generate_progress_report, explain_strategy
+from autogen_agents import create_website, set_autonomy_level, generate_progress_report, explain_strategy, o1_call
 import asyncio
 import logging
+import traceback
 
 app = FastAPI()
 
@@ -28,6 +29,7 @@ class ConsultationResponse(BaseModel):
     message: str
     tsx_preview: Optional[str] = None
     shared_knowledge: Dict[str, Any] = {}
+    compiled_results: Optional[str] = None
 
 class AutonomyRequest(BaseModel):
     autonomy_level: int
@@ -41,6 +43,9 @@ class StrategyExplanationRequest(BaseModel):
 class StrategyExplanationResponse(BaseModel):
     explanation: str
 
+class TestOpenRouterRequest(BaseModel):
+    prompt: str
+
 @app.options("/consult")
 async def options_consult():
     return {"message": "OK"}
@@ -53,13 +58,14 @@ async def consult(request: ConsultationRequest):
         return ConsultationResponse(**result)
     except Exception as e:
         logging.error(f"Error in consult endpoint: {e}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/set_autonomy")
 async def set_autonomy(request: AutonomyRequest):
     try:
         set_autonomy_level(request.autonomy_level)
-        return {"message": "Autonomy level set successfully"}
+        return {"message": f"Autonomy level set successfully to {request.autonomy_level}"}
     except Exception as e:
         logging.error(f"Error in set_autonomy endpoint: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -85,6 +91,16 @@ async def get_strategy_explanation(request: StrategyExplanationRequest):
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.post("/test_openrouter")
+async def test_openrouter(request: TestOpenRouterRequest):
+    try:
+        response = await asyncio.to_thread(o1_call, request.prompt)
+        return {"response": response}
+    except Exception as e:
+        logging.error(f"Error in test_openrouter endpoint: {e}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
     import uvicorn
