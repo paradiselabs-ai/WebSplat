@@ -12,7 +12,7 @@ from typing import Dict, Any, List
 import os
 import logging
 from dotenv import load_dotenv
-from google.cloud import aiplatform
+from langchain_google_vertexai import ChatVertexAI
 import openai
 from tavily import TavilyClient
 import anthropic
@@ -24,7 +24,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 load_dotenv()
 
 # Initialize AI Platform
-aiplatform.init(project=os.getenv("GOOGLE_CLOUD_PROJECT"), location="us-central1")
+project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
+if not project_id:
+    logging.warning("GOOGLE_CLOUD_PROJECT not found in environment variables. ChatVertexAI may not work properly.")
 
 # Initialize OpenRouter client
 openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
@@ -33,10 +35,20 @@ if not openrouter_api_key:
     raise ValueError("OPENROUTER_API_KEY not found in environment variables")
 
 # Initialize Tavily client
-tavily_client = TavilyClient(api_key=os.getenv("TAVILY_API_KEY"))
+tavily_api_key = os.getenv("TAVILY_API_KEY")
+if tavily_api_key:
+    tavily_client = TavilyClient(api_key=tavily_api_key)
+else:
+    logging.warning("TAVILY_API_KEY not found in environment variables. Tavily search will not be available.")
+    tavily_client = None
 
 # Initialize Anthropic client
-anthropic_client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
+anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+if anthropic_api_key:
+    anthropic_client = anthropic.Anthropic(api_key=anthropic_api_key)
+else:
+    logging.warning("ANTHROPIC_API_KEY not found in environment variables. Claude API will not be available.")
+    anthropic_client = None
 
 # Initialize Perplexity client
 perplexity_api_key = os.getenv("PERPLEXITY_API_KEY")
@@ -96,26 +108,31 @@ def o1_call(prompt: str) -> str:
     return openrouter_call(prompt, "openai/gpt-4")
 
 def claude_vertex_call(prompt: str) -> str:
+    if not anthropic_client:
+        return "Claude API is not available due to missing API key."
     try:
         completion = anthropic_client.completions.create(
-            model="claude-3-sonnet-20240229",
+            model="claude-3-sonnet-20240229-v1:0",
             max_tokens_to_sample=1000,
             prompt=f"\n\nHuman: {prompt}\n\nAssistant:",
         )
         return completion.completion
     except Exception as e:
         logging.error(f"Error in claude_vertex_call: {e}")
-        return "Error in claude_vertex_call"
+        return f"Error in claude_vertex_call: {str(e)}"
 
 def vertex_ai_call(prompt: str) -> str:
     try:
-        response = aiplatform.ChatModel.from_pretrained("chat-bison@001").predict(prompt=prompt)
-        return response.text
+        chat = ChatVertexAI(model_name="chat-bison@001", project=project_id)
+        response = chat.predict(prompt)
+        return response
     except Exception as e:
         logging.error(f"Error in vertex_ai_call: {e}")
-        return "Error in vertex_ai_call"
+        return f"Error in vertex_ai_call: {str(e)}"
 
 def perplexity_call(prompt: str) -> str:
+    if not perplexity_api_key:
+        return "Perplexity API is not available due to missing API key."
     try:
         headers = {
             "Authorization": f"Bearer {perplexity_api_key}",
@@ -130,15 +147,17 @@ def perplexity_call(prompt: str) -> str:
         return response.json()['choices'][0]['message']['content']
     except Exception as e:
         logging.error(f"Perplexity API call failed: {e}")
-        return "Perplexity API call failed"
+        return f"Perplexity API call failed: {str(e)}"
 
 def web_search(query: str) -> List[Dict[str, str]]:
+    if not tavily_client:
+        return [{"title": "Web search unavailable", "content": "Tavily API is not available due to missing API key."}]
     try:
         search_result = tavily_client.search(query=query)
         return [{"title": result["title"], "content": result["content"]} for result in search_result["results"]]
     except Exception as e:
         logging.error(f"Tavily search failed: {e}")
-        return []
+        return [{"title": "Search error", "content": f"Tavily search failed: {str(e)}"}]
     
 # Define a dictionary to map function names to actual functions
 FUNCTION_MAP = {
@@ -150,7 +169,11 @@ FUNCTION_MAP = {
     "web_search": web_search
 }
 
-
+def is_termination_msg(x):
+    if isinstance(x, dict):
+        return x.get("content", "").rstrip().endswith("TERMINATE")
+    elif isinstance(x, str):
+        pass
 class EnhancedAssistantAgent(AssistantAgent):
     def __init__(self, name: str, system_message: str, llm_config: Dict[str, Any]):
         # Convert the function to a string identifier
@@ -327,12 +350,12 @@ research_agent = EnhancedAssistantAgent(
     system_message="Conduct web searches to gather relevant information for the website creation process.",
     llm_config={"function": web_search, "model": "web_search"}
 )
-
+        
 user_proxy = UserProxyAgent(
     name="User_Proxy",
     human_input_mode="NEVER",
     max_consecutive_auto_reply=10,
-    is_termination_msg=lambda x: x.get("content", "").rstrip().endswith("TERMINATE"),
+    is_termination_msg=is_termination_msg,
     code_execution_config={"work_dir": "web_project", "use_docker": False},  # Disable Docker usage
     system_message="You are a proxy for the end-user, initiating the website creation process and providing necessary information and feedback."
 )
@@ -381,11 +404,13 @@ def create_website(user_requirements: str, autonomy_level: int) -> Dict[str, Any
                         agent.complete_task(task)
                 
                 # Check for termination condition
-                if agent._is_termination_msg(chat_messages[-1]):
-                    break
+                if isinstance(agent, UserProxyAgent):
+                    last_message = chat_messages[-1]
+                    if is_termination_msg(last_message):
+                        break
             
             # Check for overall termination
-            if any(agent._is_termination_msg(chat_messages[-1]) for agent in agents):
+            if is_termination_msg(chat_messages[-1]):
                 break
 
         # Compile results
