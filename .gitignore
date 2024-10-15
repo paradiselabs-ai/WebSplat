@@ -6,6 +6,7 @@ websplat-env/
 WebSplat.code-workspace/
 # Environment variables
 .env
+google_credentials.json
 
 # Build outputs
 build/
