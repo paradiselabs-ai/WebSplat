@@ -23,6 +23,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 # Load environment variables
 load_dotenv()
 
+# Explicitly set GOOGLE_APPLICATION_CREDENTIALS
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = os.path.join(os.getcwd(), 'google_credentials.json')
+
 # Initialize AI Platform
 project_id = os.getenv("GOOGLE_CLOUD_PROJECT")
 if not project_id:
@@ -111,12 +114,14 @@ def claude_vertex_call(prompt: str) -> str:
     if not anthropic_client:
         return "Claude API is not available due to missing API key."
     try:
-        completion = anthropic_client.completions.create(
-            model="claude-3-sonnet-20240229-v1:0",
-            max_tokens_to_sample=1000,
-            prompt=f"\n\nHuman: {prompt}\n\nAssistant:",
+        message = anthropic_client.messages.create(
+            model="claude-3-sonnet-20240229",
+            max_tokens=1000,
+            messages=[
+                {"role": "user", "content": prompt}
+            ]
         )
-        return completion.completion
+        return message.content[0].text
     except Exception as e:
         logging.error(f"Error in claude_vertex_call: {e}")
         return f"Error in claude_vertex_call: {str(e)}"
@@ -139,7 +144,7 @@ def perplexity_call(prompt: str) -> str:
             "Content-Type": "application/json"
         }
         data = {
-            "model": "sonar-medium-online",
+            "model": "mistral-7b-instruct",
             "messages": [{"role": "user", "content": prompt}]
         }
         response = requests.post("https://api.perplexity.ai/chat/completions", headers=headers, json=data)
@@ -151,12 +156,16 @@ def perplexity_call(prompt: str) -> str:
 
 def web_search(query: str) -> List[Dict[str, str]]:
     if not tavily_client:
+        logging.warning("Tavily client is not initialized. Web search is unavailable.")
         return [{"title": "Web search unavailable", "content": "Tavily API is not available due to missing API key."}]
     try:
+        logging.info(f"Performing web search for query: {query}")
         search_result = tavily_client.search(query=query)
+        logging.info(f"Received {len(search_result['results'])} results from Tavily")
         return [{"title": result["title"], "content": result["content"]} for result in search_result["results"]]
     except Exception as e:
         logging.error(f"Tavily search failed: {e}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
         return [{"title": "Search error", "content": f"Tavily search failed: {str(e)}"}]
     
 # Define a dictionary to map function names to actual functions
@@ -347,13 +356,13 @@ user_content_manager = EnhancedAssistantAgent(
 monetization_agent = EnhancedAssistantAgent(
     name="Monetization_Agent",
     system_message="Develop monetization strategies for the website based on its purpose and target audience.",
-    llm_config={"function": perplexity_call, "model": "sonar-medium-online"}
+    llm_config={"function": perplexity_call, "model": "mistral-7b-instruct"}
 )
 
 seo_agent = EnhancedAssistantAgent(
     name="SEO_Agent",
     system_message="Optimize the website for search engines, providing recommendations for improved visibility and ranking.",
-    llm_config={"function": perplexity_call, "model": "sonar-medium-online"}
+    llm_config={"function": perplexity_call, "model": "mistral-7b-instruct"}
 )
 
 research_agent = EnhancedAssistantAgent(
