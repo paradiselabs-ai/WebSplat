@@ -170,10 +170,21 @@ FUNCTION_MAP = {
 }
 
 def is_termination_msg(x):
+    # Check if x is a dictionary with content as a string
     if isinstance(x, dict):
-        return x.get("content", "").rstrip().endswith("TERMINATE")
-    elif isinstance(x, str):
-        pass
+        content = x.get("content", "")
+        if isinstance(content, str):
+            return content.rstrip().endswith("TERMINATE")
+    # If x is a list, check each element within
+    elif isinstance(x, list):
+        for item in x:
+            if is_termination_msg(item):  # Recursively check each item
+                return True
+    # Log a warning if x is neither dict nor list
+    else:
+        logging.warning(f"Unexpected type detected: {type(x)}, value: {x}")
+    return False
+
 class EnhancedAssistantAgent(AssistantAgent):
     def __init__(self, name: str, system_message: str, llm_config: Dict[str, Any]):
         # Convert the function to a string identifier
