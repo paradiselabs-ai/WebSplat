@@ -1,0 +1,25 @@
+graph TD
+    A[User] -->|Interacts with| B[Consultation Agent]
+    B -->|Gathers information| C[GroundX RAG Vector DB]
+    B -->|Shares requirements| D[Autogen Multi-Agent System]
+    D -->|Generates| E[Example TSX Interface]
+    E -->|Sent to| F[Live React Renderer]
+    F -->|Displayed to| A
+    A -->|Approves/Requests changes| B
+    D -->|Generates| G[Complete Website Code]
+    G -->|Deployed to| H[Local Development Server]
+    H -->|Link shared with| B
+    B -->|Provides link to| A
+    A -->|Views and provides feedback| B
+    D -->|Implements| I[Monetization Strategies]
+    D -->|Implements| J[SEO Optimizations]
+    K[R&D Agent] -->|Researches and adds info| C
+    D -->|Accesses information from| C
+    L[Google Cloud Services] -->|Used for deployment and shared knowledge| D
+
+    subgraph "Autogen Multi-Agent System"
+    D
+    M[Backend Developer Agents]
+    N[Monetization Agents]
+    O[SEO Agents]
+    end

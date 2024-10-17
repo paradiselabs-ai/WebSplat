@@ -6,12 +6,13 @@ import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { PanelRightOpen, Settings, Plus, Laptop, Smartphone, Layout, DollarSign, Search, BarChart2, Cloud, Edit2, ArrowUp } from 'lucide-react';
+import { PanelRightOpen, Settings, Plus, Laptop, Smartphone, Layout, DollarSign, Search, BarChart2, Cloud, Edit2, ArrowUp, Sliders } from 'lucide-react';
 import axios from 'axios';
 
 interface Message {
   role: 'ai' | 'user';
   content: string;
+  agent?: string;
 }
 
 type PreviewMode = 'desktop' | 'mobile';
@@ -20,6 +21,14 @@ interface AgentView {
   name: string;
   icon: React.ElementType;
   content: string[];
+}
+
+interface WebSocketMessage {
+  type: 'preview_update' | 'agent_update' | 'progress_update' | 'chat_message' | 'knowledge_update_UI Design' | 'knowledge_update_Monetization' | 'knowledge_update_SEO' | 'knowledge_update_Analytics' | 'knowledge_update_Deployment';
+  content?: string | number | string[];
+  agent?: string;
+  progress?: number;
+  role?: 'ai' | 'user';
 }
 
 const MinimalAutonomyControl: React.FC<{
@@ -51,16 +60,31 @@ const MinimalAutonomyControl: React.FC<{
   );
 };
 
-const LivePreview: React.FC<{ html: string; mode: PreviewMode }> = ({ html, mode }) => {
+const LivePreview: React.FC<{ workspaceId: string | null; mode: PreviewMode; generatedHtml: string }> = ({ workspaceId, mode, generatedHtml }) => {
+  if (!workspaceId) {
+    return <div>No preview available</div>;
+  }
+
+  const content = generatedHtml || `http://localhost:8000/serve/${workspaceId}/index.html`;
+
   return (
     <div className={`w-full h-full overflow-auto ${mode === 'mobile' ? 'max-w-[375px] mx-auto' : ''}`}>
       <div className={`border-2 border-[#444444] rounded-lg overflow-hidden ${mode === 'mobile' ? 'w-[375px] h-[667px]' : 'w-full h-full'}`}>
-        <iframe
-          srcDoc={html}
-          title="Live Preview"
-          className="w-full h-full border-0"
-          style={{ transform: mode === 'mobile' ? 'scale(0.75)' : 'none', transformOrigin: 'top left' }}
-        />
+        {generatedHtml ? (
+          <iframe
+            srcDoc={content}
+            title="Live Preview"
+            className="w-full h-full border-0"
+            style={{ transform: mode === 'mobile' ? 'scale(0.75)' : 'none', transformOrigin: 'top left' }}
+          />
+        ) : (
+          <iframe
+            src={content}
+            title="Live Preview"
+            className="w-full h-full border-0"
+            style={{ transform: mode === 'mobile' ? 'scale(0.75)' : 'none', transformOrigin: 'top left' }}
+          />
+        )}
       </div>
     </div>
   );
@@ -118,19 +142,96 @@ const WebSplatInterface: React.FC = () => {
   const [activeView, setActiveView] = useState<string>('chat');
   const [progressReport, setProgressReport] = useState<string>('');
   const [strategyExplanation, setStrategyExplanation] = useState<string>('');
+  const [isAutonomySliderVisible, setIsAutonomySliderVisible] = useState<boolean>(false);
+  const [workspaceId, setWorkspaceId] = useState<string | null>(null);
+  const [socket, setSocket] = useState<WebSocket | null>(null);
+  const [overallProgress, setOverallProgress] = useState<number>(0);
 
   const togglePreview = () => setPreviewOpen(!previewOpen);
+  const toggleAutonomySlider = () => setIsAutonomySliderVisible(!isAutonomySliderVisible);
+
+  useEffect(() => {
+    if (workspaceId) {
+      const newSocket = new WebSocket(`ws://localhost:8000/ws/${workspaceId}`);
+      
+      newSocket.onopen = () => {
+        console.log('WebSocket connection established');
+      };
+
+      newSocket.onmessage = (event) => {
+        const data = JSON.parse(event.data) as WebSocketMessage;
+        handleWebSocketMessage(data);
+      };
+
+      newSocket.onclose = () => {
+        console.log('WebSocket connection closed');
+      };
+
+      setSocket(newSocket);
+
+      return () => {
+        if (socket) {
+          socket.close();
+        }
+        newSocket.close();
+      };
+    }
+  }, [workspaceId, socket]);
+
+  const handleWebSocketMessage = (data: WebSocketMessage) => {
+    switch (data.type) {
+      case 'preview_update':
+        if (typeof data.content === 'string') {
+          setGeneratedHtml(data.content);
+        }
+        break;
+      case 'progress_update':
+        if (typeof data.content === 'number') {
+          setOverallProgress(data.content);
+        }
+        break;
+      case 'knowledge_update_UI Design':
+      case 'knowledge_update_Monetization':
+      case 'knowledge_update_SEO':
+      case 'knowledge_update_Analytics':
+      case 'knowledge_update_Deployment':
+        const agentType = data.type.split('_')[2];
+        if (Array.isArray(data.content)) {
+          updateAgentView(agentType, data.content);
+        }
+        break;
+      case 'chat_message':
+        if (data.role && typeof data.content === 'string') {
+          addMessage(data.role, data.content, data.agent);
+        }
+        break;
+      default:
+        console.log('Unknown message type:', data.type);
+    }
+  };
+
+  const updateAgentView = (agentName: string, content: string[]) => {
+    setAgentViews(prevViews => 
+      prevViews.map(view => 
+        view.name === agentName 
+          ? { ...view, content: content } 
+          : view
+      )
+    );
+  };
+
+  const addMessage = (role: 'ai' | 'user', content: string, agent?: string) => {
+    setMessages(prevMessages => [...prevMessages, { role, content, agent }]);
+  };
 
   const handleSendMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (inputMessage.trim() !== '') {
       setIsSending(true);
-      setMessages(prevMessages => [...prevMessages, { role: 'user', content: inputMessage }]);
+      addMessage('user', inputMessage);
       setInputMessage('');
       if (isFirstInteraction) {
-        setTimeout(() => {
-          setIsFirstInteraction(false);
-        }, 500);
+        setIsFirstInteraction(false);
       }
 
       try {
@@ -140,31 +241,40 @@ const WebSplatInterface: React.FC = () => {
         });
 
         const aiResponse = response.data.message;
-        setMessages(prevMessages => [...prevMessages, { role: 'ai', content: aiResponse }]);
+        addMessage('ai', aiResponse);
 
         if (response.data.tsx_preview) {
           setGeneratedHtml(response.data.tsx_preview);
         }
 
+        if (response.data.workspace_id) {
+          setWorkspaceId(response.data.workspace_id);
+        }
+
         // Update agent views
-        const updatedViews = agentViews.map(view => {
-          if (response.data[view.name.toLowerCase()]) {
-            return {
-              ...view,
-              content: [...view.content, response.data[view.name.toLowerCase()]]
-            };
-          }
-          return view;
+        Object.entries(response.data.shared_knowledge).forEach(([key, value]) => {
+          updateAgentView(key, value as string[]);
         });
-        setAgentViews(updatedViews);
 
         setIsTyping(false);
         setCurrentAiMessage('');
       } catch (error) {
         console.error('Error communicating with backend:', error);
-        setMessages(prevMessages => [...prevMessages, { role: 'ai', content: 'I apologize, but I encountered an error while processing your request. Could you please try again?' }]);
+        addMessage('ai', 'I apologize, but I encountered an error while processing your request. Could you please try again?');
       } finally {
         setIsSending(false);
+      }
+    }
+  };
+
+  const fetchPreview = async () => {
+    if (workspaceId) {
+      try {
+        const response = await axios.get(`http://localhost:8000/serve/${workspaceId}/index.html`);
+        setGeneratedHtml(response.data);
+      } catch (error) {
+        console.error('Error fetching preview:', error);
+        setGeneratedHtml('Error fetching preview. Please try again.');
       }
     }
   };
@@ -228,7 +338,6 @@ const WebSplatInterface: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col bg-[#2C2B28] text-[#888888]">
-      {/* Top Bar */}
       <header className="h-14 flex items-center justify-between px-4 z-10 bg-gradient-to-b from-[#2A2A2A] to-[#2C2B28]">
         <div className="flex items-center space-x-4">
           <span className="text-sm font-semibold text-[#888888]">WebSplat</span>
@@ -270,6 +379,9 @@ const WebSplatInterface: React.FC = () => {
           )}
         </div>
         <div className="flex items-center space-x-4">
+          <Button variant="ghost" size="icon" className="group" onClick={toggleAutonomySlider}>
+            <Sliders className="h-5 w-5" />
+          </Button>
           <Button variant="ghost" size="icon" className="group">
             <Settings className="h-5 w-5 transition-transform duration-300 group-hover:rotate-180" />
           </Button>
@@ -281,13 +393,11 @@ const WebSplatInterface: React.FC = () => {
       </header>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Gradient overlay */}
         <div
           className="fixed top-14 left-0 w-64 h-[calc(100%-5rem)] mt-4 ml-4 pointer-events-none z-20 transition-opacity duration-300 rounded-2xl"
           style={gradientStyle}
         ></div>
 
-        {/* Sidebar */}
         <aside className={`w-64 p-4 flex flex-col bg-[#2A2A2A] text-[#888888] fixed h-[calc(100%-5rem)] mt-4 ml-4 mb-6 rounded-2xl transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} z-30`}>
           <Button className="mb-6 bg-transparent text-[#999999] hover:bg-[#3A3A3A] transition-all duration-300 transform hover:scale-105">
             <Plus className="mr-2 h-4 w-4" /> New Website
@@ -322,7 +432,6 @@ const WebSplatInterface: React.FC = () => {
           </div>
         </aside>
 
-        {/* Main Content */}
         <main className={`flex-1 flex flex-col overflow-hidden bg-[#2C2B28] text-[#999999] transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
           <Tabs value={activeView} onValueChange={setActiveView} className="flex-1 flex flex-col">
             <TabsList className="justify-start px-4 py-2 border-b border-[#333333]">
@@ -331,6 +440,7 @@ const WebSplatInterface: React.FC = () => {
                 <TabsTrigger key={index} value={view.name}>{view.name}</TabsTrigger>
               ))}
               <TabsTrigger value="progress">Progress</TabsTrigger>
+              <TabsTrigger value="preview">Preview</TabsTrigger>
             </TabsList>
             <TabsContent value="chat" className="flex-1 flex flex-col">
               <div className="flex-1 flex justify-center items-center">
@@ -403,8 +513,18 @@ const WebSplatInterface: React.FC = () => {
             ))}
             <TabsContent value="progress" className="flex-1 p-4 overflow-auto">
               <h2 className="text-xl font-bold mb-4">Progress Report</h2>
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold mb-2">Overall Progress</h3>
+                <div className="w-full bg-[#31312E] rounded-full h-4">
+                  <div
+                    className="bg-[#A3512B] h-4 rounded-full"
+                    style={{ width: `${overallProgress}%` }}
+                  ></div>
+                </div>
+                <p className="mt-2 text-right">{overallProgress}%</p>
+              </div>
               <Button onClick={requestProgressReport} className="mb-4">
-                Get Progress Report
+                Get Detailed Progress Report
               </Button>
               {progressReport && (
                 <div className="bg-[#31312E] p-3 rounded">
@@ -412,10 +532,16 @@ const WebSplatInterface: React.FC = () => {
                 </div>
               )}
             </TabsContent>
+            <TabsContent value="preview" className="flex-1 p-4 overflow-auto">
+              <h2 className="text-xl font-bold mb-4">Live Preview</h2>
+              <Button onClick={fetchPreview} className="mb-4">
+                Refresh Preview
+              </Button>
+              <LivePreview workspaceId={workspaceId} mode={previewMode} generatedHtml={generatedHtml} />
+            </TabsContent>
           </Tabs>
         </main>
 
-        {/* Real-time Preview Toggle */}
         <Button
           variant="ghost"
           size="icon"
@@ -426,7 +552,6 @@ const WebSplatInterface: React.FC = () => {
           <PanelRightOpen className="h-5 w-5" />
         </Button>
 
-        {/* Real-time Preview Panel */}
         <aside className={`fixed inset-0 bg-[#2A2A2A] text-[#888888] transition-transform duration-300 ease-in-out ${previewOpen ? 'translate-x-0' : 'translate-x-full'} z-50`}>
           <div className="h-14 border-b border-[#333333] flex items-center justify-between px-4">
             <h2 className="font-semibold">Real-time Preview</h2>
@@ -456,12 +581,22 @@ const WebSplatInterface: React.FC = () => {
             </div>
           </div>
           <div className="flex-1 p-4 overflow-auto h-[calc(100vh-3.5rem)]">
-            <LivePreview html={generatedHtml} mode={previewMode} />
+            <LivePreview workspaceId={workspaceId} mode={previewMode} generatedHtml={generatedHtml} />
           </div>
           <div className="p-2 text-sm text-[#777777] text-center">
             Note: This preview updates live as the AI generates the website code.
           </div>
         </aside>
+
+        {isAutonomySliderVisible && (
+          <div className="fixed top-14 right-4 bg-[#2A2A2A] p-4 rounded-lg shadow-lg z-50">
+            <h3 className="text-lg font-semibold mb-2">AI Autonomy Level</h3>
+            <MinimalAutonomyControl
+              value={autonomyLevel}
+              onChange={setAutonomyLevel}
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,11 +1,17 @@
-import { O1Model, VertexAIModel } from './aiModels'; // We'll create this file next
-import { TavilyAPI } from './webSearch'; // We'll create this file next
+import axios from 'axios';
+import { O1Model, VertexAIModel } from './aiModels';
+import { TavilyAPI, SearchResult } from './webSearch';
 
 interface AgentTask {
   id: string;
   description: string;
   assignedTo: string;
   status: 'pending' | 'in-progress' | 'completed';
+}
+
+interface AgentView {
+  name: string;
+  content: string[];
 }
 
 class AIAgent {
@@ -22,6 +28,7 @@ class MainAIBrain {
   private vertexAI: VertexAIModel;
   private agents: AIAgent[];
   private webSearch: TavilyAPI;
+  private autonomyLevel: number;
 
   constructor(autonomyLevel: number) {
     this.o1Model = new O1Model();
@@ -33,43 +40,91 @@ class MainAIBrain {
       new AIAgent('SEOExpert', 'SEO Optimization'),
       new AIAgent('MonetizationSpecialist', 'Monetization'),
     ];
+    this.autonomyLevel = autonomyLevel;
     this.setAutonomyLevel(autonomyLevel);
   }
 
   setAutonomyLevel(level: number) {
+    this.autonomyLevel = level;
     // Implement logic to adjust AI behavior based on autonomy level
   }
 
-  async processUserInput(input: string): Promise<string> {
-    // Use O1 model for high-level decision making
-    const decision = await this.o1Model.makeDecision(input);
+  async processUserInput(input: string): Promise<{
+    message: string;
+    tsxPreview: string;
+    agentViews: AgentView[];
+  }> {
+    try {
+      // Use existing logic
+      const decision = await this.o1Model.makeDecision(input);
+      const searchResults = await this.webSearch.search(input);
+      const tasks = this.delegateTasks(decision, searchResults);
+      const results = await Promise.all(tasks.map(task => 
+        this.agents.find(agent => agent.name === task.assignedTo)?.performTask(task)
+      ));
+      const localResponse = this.generateFinalResponse(results);
 
-    // Use VertexAI for quick tasks
-    const quickResponse = await this.vertexAI.generateResponse(decision);
+      // Communicate with backend
+      const response = await axios.post('http://localhost:8000/consult', {
+        message: input,
+        autonomy_level: this.autonomyLevel,
+        local_response: localResponse,
+        decision: decision,
+        search_results: searchResults
+      });
 
-    // Perform web search if needed
-    const searchResults = await this.webSearch.search(input);
+      const agentViews: AgentView[] = [
+        { name: 'UI Design', content: [response.data['ui design'] || ''] },
+        { name: 'Monetization', content: [response.data['monetization'] || ''] },
+        { name: 'SEO', content: [response.data['seo'] || ''] },
+        { name: 'Analytics', content: [response.data['analytics'] || ''] },
+        { name: 'Deployment', content: [response.data['deployment'] || ''] },
+      ];
 
-    // Delegate tasks to appropriate agents
-    const tasks = this.delegateTasks(decision, searchResults);
-
-    // Execute tasks and collect results
-    const results = await Promise.all(tasks.map(task => 
-      this.agents.find(agent => agent.name === task.assignedTo)?.performTask(task)
-    ));
-
-    // Combine results and generate final response
-    return this.generateFinalResponse(results);
+      return {
+        message: response.data.message,
+        tsxPreview: response.data.tsx_preview || '',
+        agentViews: agentViews
+      };
+    } catch (error) {
+      console.error('Error processing user input:', error);
+      throw error;
+    }
   }
 
-  private delegateTasks(decision: string, searchResults: any[]): AgentTask[] {
-    // Implement task delegation logic
-    return [];
+  private delegateTasks(decision: string, searchResults: SearchResult[]): AgentTask[] {
+    // Implement task delegation logic based on decision and search results
+    return this.agents.map((agent, index) => ({
+      id: `task-${index}`,
+      description: `${agent.role} task based on decision: ${decision} and search results: ${JSON.stringify(searchResults)}`,
+      assignedTo: agent.name,
+      status: 'pending'
+    }));
   }
 
   private generateFinalResponse(results: (string | undefined)[]): string {
     // Implement response generation logic
-    return results.join(' ');
+    return results.filter(Boolean).join(' ');
+  }
+
+  async getProgressReport(): Promise<string> {
+    try {
+      const response = await axios.get('http://localhost:8000/progress_report');
+      return response.data.report;
+    } catch (error) {
+      console.error('Error fetching progress report:', error);
+      throw error;
+    }
+  }
+
+  async explainStrategy(strategyType: string): Promise<string> {
+    try {
+      const response = await axios.post('http://localhost:8000/explain_strategy', { strategy_type: strategyType });
+      return response.data.explanation;
+    } catch (error) {
+      console.error('Error fetching strategy explanation:', error);
+      throw error;
+    }
   }
 }
 

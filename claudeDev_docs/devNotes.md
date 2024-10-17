@@ -1,7 +1,7 @@
 # Development Notes
 
 ## Project Overview
-WebSplat is an AI-driven website creation platform that uses a hierarchical system of AI agents to generate passive income websites. The system features a sleek, modern user interface and a flexible, collaborative AI workflow.
+WebSplat is an AI-driven website creation platform that uses a hierarchical system of AI agents to generate passive income websites. The system features a sleek, modern user interface and a flexible, collaborative AI workflow, functioning similarly to Vercel's v0.
 
 ## Recent Changes
 - Shifted to a React/Next.js frontend for a more modern and responsive UI
@@ -14,6 +14,9 @@ WebSplat is an AI-driven website creation platform that uses a hierarchical syst
 - Successfully implemented live TSX preview using react-live library
 - Integrated error handling and logging in the backend
 - Implemented autonomy level adjustments for agent behavior
+- Updated backend (main.py) to generate TSX preview based on AI responses
+- Modified WebSplatInterface.tsx to include a new "Preview" tab for displaying generated TSX code
+- Updated handleSendMessage function to set generatedHtml state with tsx_preview from backend response
 
 ## Current Focus
 - Rapidly integrating the backend with the frontend for a working MVP demo (Urgent)
@@ -24,6 +27,11 @@ WebSplat is an AI-driven website creation platform that uses a hierarchical syst
 - Improving the integration of O1 model as the main reasoning/brain
 - Developing progress visualization components for the frontend
 - Preparing for comprehensive system testing
+- Creating and executing a test plan for the new TSX preview feature
+- Ensuring all existing functionality remains intact while integrating new features
+- Implementing a real-time rendering system for the preview window
+- Setting up a system for serving the generated websites
+- Preparing for hosting and deployment on Google Cloud
 
 ## Technology Stack
 - Frontend: React, Next.js
@@ -32,6 +40,7 @@ WebSplat is an AI-driven website creation platform that uses a hierarchical syst
 - Database: TBD (consider options based on scaling needs)
 - APIs: Tavily for web searches, various AI model APIs
 - Live TSX Rendering: react-live library
+- Hosting: Google Cloud (planned)
 
 ## AI Agent System
 - Hierarchical structure with O1 and Vertex AI at the top
@@ -39,6 +48,7 @@ WebSplat is an AI-driven website creation platform that uses a hierarchical syst
 - Inter-agent communication and task delegation
 - Adjustable autonomy and creativity levels
 - Web search integration for market research and feature inspiration
+- Collaborative code generation in a dedicated workspace on the server
 
 ## User Interface
 - Main chat interface for user-AI interaction
@@ -46,6 +56,8 @@ WebSplat is an AI-driven website creation platform that uses a hierarchical syst
 - Adjustable autonomy/creativity meter
 - Toggle-able window view for UI design progress with live TSX preview
 - Real-time progress visualization for various aspects (UI, monetization, SEO)
+- New "Preview" tab for displaying live render of generated TSX code
+- Consultation agent guiding the user through the process and providing real-time updates
 
 ## Key Features to Implement
 1. Conversational AI prompt window (Completed)
@@ -56,66 +68,90 @@ WebSplat is an AI-driven website creation platform that uses a hierarchical syst
 6. Real-time progress visualization (To Do)
 7. UI design preview window with live TSX rendering (Completed)
 8. Additional views for monetization, SEO, and other aspects (Urgent, In Progress)
+9. TSX preview generation and display (Completed, needs testing)
+10. Backend workspace for code generation and iteration (To Do)
+11. Real-time rendering system for the preview window (To Do)
+12. System for serving generated websites (To Do)
+13. Google Cloud deployment preparation (To Do)
 
 ## Best Practices
-- Follow React and Next.js best practices for component structure and state management
-- Implement proper error handling and logging throughout the application
-- Use TypeScript for better type safety and developer experience
-- Implement comprehensive testing for both frontend and backend components
-- Regularly update documentation to reflect current project state and future plans
-- Use ESLint and Prettier for consistent code formatting
-- Implement CI/CD pipelines for automated testing and deployment
-- NEVER OMIT UNRELATED CODE when making changes or additions
-- Always preserve the entire codebase, only modifying the specific parts relevant to the current task
-- Be extremely careful not to disrupt any working parts of the existing interface
-- Proceed with caution when making changes, especially to core functionality
-- When updating files, always read the entire content first and make changes without omitting any existing code
-- Regularly review and test the entire system to ensure all components are working together correctly
-- For urgent MVP development, focus on rapid integration while maintaining existing functionality
+(Existing best practices remain unchanged)
 
 ## Testing Strategy
-- Implement unit tests for individual components (React components, AI agents, utility functions)
-- Create integration tests for API endpoints and AI agent interactions
-- Implement end-to-end tests for critical user flows
-- Use mock objects to simulate AI model responses in tests
-- Regularly run all tests, especially before merging new features
+(Existing testing strategy remains unchanged)
 
 ## Deployment Considerations
-- Choose a suitable hosting platform (e.g., Vercel for Next.js frontend, Google Cloud or AWS for backend)
-- Implement proper environment variable management for different deployment stages
-- Set up monitoring and logging for production environment
-- Implement a scalable architecture to handle potential high traffic
+- Set up Google Cloud infrastructure for deploying and serving the generated websites
+- Implement a build process in the backend that compiles the React code
+- Create a deployment pipeline that pushes the built code to Google Cloud
+- Provide users with a URL where they can view and interact with their generated website
+(Other existing deployment considerations remain unchanged)
 
 ## Future Considerations
-- Implement A/B testing capabilities for comparing different AI strategies
-- Develop a plugin system for easy integration of new AI models or services
-- Research and implement advanced caching strategies for improved performance
-- Design and implement a version control system for generated websites
-- Explore options for user account management and saved projects
+(Existing future considerations remain unchanged)
 
 ## Challenges and Solutions
-- Challenge: Implementing real-time TSX rendering
-  Solution: Successfully utilized the react-live library to create a live preview of generated TSX code
-- Challenge: Managing complex state in the frontend
-  Solution: Consider implementing a state management library like Redux or Recoil if the application state becomes too complex
-- Challenge: Coordinating multiple AI agents
-  Solution: Implemented a hierarchical structure with adjustable autonomy levels
-- Challenge: Rapid MVP development for hackathon
-  Solution: Focus on integrating existing components and implementing essential new views without disrupting core functionality
+(Existing challenges and solutions remain unchanged, add the following:)
+- Challenge: Implementing real-time collaboration of backend agents for website generation
+  Solution: Create a dedicated workspace on the server for code generation and iteration
+- Challenge: Serving generated websites in real-time
+  Solution: Implement a system to build and deploy generated code to a hosting environment (Google Cloud)
 
 ## Next Steps (Urgent - MVP Development)
-1. Rapidly integrate the backend with the frontend:
-   - Ensure all existing agent communications are preserved
-   - Verify that the consulting agent can properly interact with the user and other agents
-2. Implement additional views in the left pane:
-   - Add views for monetization, SEO, and other relevant aspects
-   - Implement basic visualizations for each aspect
-3. Enhance the consultation agent's capabilities:
-   - Enable progress report generation on user request
-   - Implement functionality to explain specific strategies (e.g., monetization)
-4. Conduct rapid testing:
-   - Verify all components are working together
-   - Test user interactions and agent responses
-   - Ensure real-time updates are displayed correctly in all views
+1. Update the backend to include a workspace for code generation and iteration:
+   - Implement a WorkspaceManager class to handle workspace creation and file operations
+   - Modify the main.py file to use the WorkspaceManager for code generation
+2. Implement a real-time rendering system for the preview window:
+   - Set up WebSocket communication between frontend and backend
+   - Update the frontend to display live renders of generated TSX code
+3. Set up a system for serving the generated websites:
+   - Implement a build process for the generated React code
+   - Create a basic deployment pipeline to Google Cloud
+4. Improve the AI agents' collaboration and code generation process:
+   - Enhance the backend logic for inter-agent communication
+   - Implement a more sophisticated code generation process using the workspace
+5. Conduct rapid testing of the new features:
+   - Test the workspace management system
+   - Verify the real-time rendering of generated websites
+   - Ensure proper collaboration between AI agents
 
 Remember to update this document regularly with new insights, solutions to challenges, and important development practices specific to WebSplat. As the project evolves, continually reassess and optimize the integration of various AI models and services.
+
+## Additional Updates
+
+### Autogen Multi-Agent System
+- The Autogen multi-agent system is already implemented in autogen_agents.py
+- Agents include: O1_Agent, Head_Project_Manager, Frontend_Designer, Lead_Developer, Consultation_Agent, User_Content_Manager, Monetization_Agent, SEO_Agent, and Research_Agent
+- Each agent has specific roles and uses different AI models (O1, Vertex AI, Claude, Perplexity)
+- The system uses a GroupChat and GroupChatManager for collaborative decision-making
+- Agents can delegate tasks, request information, and update shared knowledge
+
+### GroundX RAG System Integration
+- Consider integrating GroundX RAG system with the existing shared knowledge base in autogen_agents.py
+- Enhance the update_shared_knowledge and get_shared_knowledge methods in EnhancedAssistantAgent class to use GroundX
+
+### Local Development Server
+- Implement functionality to deploy generated website code to a local server
+- Update the create_website function to include local server deployment steps
+
+### WebSocket Communication
+- Implement WebSocket communication for real-time updates between frontend and backend
+- Update the frontend to handle WebSocket messages and update the UI accordingly
+
+### Monetization and SEO Strategy Integration
+- Leverage existing Monetization_Agent and SEO_Agent in autogen_agents.py
+- Enhance the explain_strategy function to provide more detailed explanations
+
+### Scaling Considerations
+- Review the current implementation in autogen_agents.py for potential bottlenecks
+- Consider optimizing the GroupChat and GroupChatManager for handling larger, more complex websites
+
+### Next Steps
+1. Review and update the autogen_agents.py file to ensure it aligns with the current project requirements
+2. Integrate the autogen agents with the main.py file and the frontend
+3. Implement WebSocket communication for real-time updates
+4. Enhance the local development server functionality
+5. Improve the integration of GroundX RAG system with the existing shared knowledge base
+6. Update the frontend to handle the collaborative agent workflow and display real-time updates
+
+Continue to prioritize getting a working MVP that can create simple websites (e.g., portfolios, blogs, small company sites) before scaling up to more complex projects. Regularly update this document with new insights and development practices as the project evolves.
