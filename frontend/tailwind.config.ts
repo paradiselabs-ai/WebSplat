@@ -86,3 +86,5 @@ const config: Config = {
 };
 
 export default config;
+
+// This comment is added to trigger a re-save and potentially resolve the TypeScript errors

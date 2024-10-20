@@ -38,6 +38,7 @@ const MinimalAutonomyControl: React.FC<{
         style={{
           background: `linear-gradient(to right, var(--accent-orange) 0%, var(--accent-orange) ${value}%, var(--background-secondary) ${value}%, var(--background-secondary) 100%)`,
         }}
+        aria-label="AI Autonomy Level"
       />
       <input
         type="number"
@@ -46,6 +47,7 @@ const MinimalAutonomyControl: React.FC<{
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value))}
         className="w-12 text-center bg-transparent border border-background-secondary rounded text-foreground"
+        aria-label="AI Autonomy Level Percentage"
       />
     </div>
   );
@@ -89,7 +91,7 @@ const TypewriterText: React.FC<{ text: string }> = ({ text }) => {
     };
   }, [text]);
 
-  return <p className="text-foreground-secondary text-lg font-primary leading-golden">{displayText}</p>;
+  return <p className="text-foreground-secondary text-lg font-primary leading-golden" aria-live="polite">{displayText}</p>;
 };
 
 const WebSplatInterface: React.FC = () => {
@@ -243,13 +245,20 @@ const WebSplatInterface: React.FC = () => {
     setIsEditingProjectName(false);
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setPreviewOpen(false);
+      setSidebarOpen(false);
+    }
+  };
+
   return (
-    <div className="h-screen flex flex-col bg-background text-foreground font-primary">
+    <div className="h-screen flex flex-col bg-background text-foreground font-primary" onKeyDown={handleKeyDown}>
       {/* Top Bar */}
-      <header className="h-14 flex items-center justify-between px-4 z-10 bg-gradient-to-b from-background-secondary to-background">
+      <header className="h-14 flex items-center justify-between px-4 z-10 bg-gradient-to-b from-background-secondary to-background" role="banner">
         <div className="flex items-center space-x-4">
           {isMobile && (
-            <Button variant="ghost" size="icon" onClick={toggleSidebar} className="lg:hidden">
+            <Button variant="ghost" size="icon" onClick={toggleSidebar} className="lg:hidden" aria-label="Toggle Sidebar">
               <Menu className="h-5 w-5" />
             </Button>
           )}
@@ -264,6 +273,7 @@ const WebSplatInterface: React.FC = () => {
                 onBlur={handleProjectNameBlur}
                 className="max-w-xs text-center bg-transparent border-none text-foreground focus:ring-0"
                 autoFocus
+                aria-label="Edit Project Name"
               />
             ) : (
               <div
@@ -274,6 +284,8 @@ const WebSplatInterface: React.FC = () => {
                 <h1
                   className={`text-2xl font-bold text-foreground cursor-pointer hover:text-foreground-secondary transition-colors duration-300 ${projectName === 'Untitled Project' ? 'animate-pulse' : ''}`}
                   onClick={() => setIsEditingProjectName(true)}
+                  role="heading"
+                  aria-level={1}
                 >
                   {projectName}
                 </h1>
@@ -283,6 +295,7 @@ const WebSplatInterface: React.FC = () => {
                     size="icon"
                     onClick={() => setIsEditingProjectName(true)}
                     className="absolute -right-8 top-1/2 transform -translate-y-1/2"
+                    aria-label="Edit Project Name"
                   >
                     <Edit2 className="h-4 w-4" />
                   </Button>
@@ -292,7 +305,7 @@ const WebSplatInterface: React.FC = () => {
           )}
         </div>
         <div className="flex items-center space-x-4">
-          <Button variant="ghost" size="icon" className="group">
+          <Button variant="ghost" size="icon" className="group" aria-label="Settings">
             <Settings className="h-5 w-5 transition-transform duration-300 group-hover:rotate-180" />
           </Button>
           <Avatar className="h-8 w-8 rounded-full overflow-hidden">
@@ -312,13 +325,13 @@ const WebSplatInterface: React.FC = () => {
         )}
 
         {/* Sidebar */}
-        <aside className={`sidebar ${sidebarOpen ? '' : 'sidebar-closed'} ${isMobile ? 'w-full' : 'w-64'}`}>
+        <aside className={`sidebar ${sidebarOpen ? '' : 'sidebar-closed'} ${isMobile ? 'w-full' : 'w-64'}`} role="complementary" aria-label="Sidebar">
           <div className="p-4 flex flex-col h-full">
             <Button className="mb-6 bg-transparent text-foreground hover:bg-background-nav transition-all duration-300 transform hover:scale-105">
               <Plus className="mr-2 h-4 w-4" /> New Website
             </Button>
             <ScrollArea className="flex-1">
-              <nav className="space-y-3">
+              <nav className="space-y-3" aria-label="Agent Views">
                 {agentViews.map((item, index) => (
                   <Button 
                     key={index}
@@ -328,10 +341,12 @@ const WebSplatInterface: React.FC = () => {
                       setActiveView(item.name);
                       if (isMobile) setSidebarOpen(false);
                     }}
+                    aria-selected={activeView === item.name}
+                    role="tab"
                   >
                     <div className="flex items-center w-full">
                       <div className="p-2 rounded-lg mr-3 group-hover:bg-background transition-colors duration-300">
-                        <item.icon className="h-5 w-5 text-foreground group-hover:text-foreground-secondary transition-colors duration-300" />
+                        <item.icon className="h-5 w-5 text-foreground group-hover:text-foreground-secondary transition-colors duration-300" aria-hidden="true" />
                       </div>
                       <span className="text-foreground group-hover:text-foreground-secondary transition-colors duration-300 text-sm">{item.name}</span>
                     </div>
@@ -352,28 +367,28 @@ const WebSplatInterface: React.FC = () => {
         </aside>
 
         {/* Main Content */}
-        <main className={`flex-1 flex flex-col overflow-hidden bg-background text-foreground transition-all duration-300 ease-out-expo ${sidebarOpen && !isMobile ? 'ml-64' : 'ml-0'}`}>
+        <main className={`flex-1 flex flex-col overflow-hidden bg-background text-foreground transition-all duration-300 ease-out-expo ${sidebarOpen && !isMobile ? 'ml-64' : 'ml-0'}`} role="main">
           <Tabs value={activeView} onValueChange={setActiveView} className="flex-1 flex flex-col">
-            <TabsList className="justify-start px-4 py-2 border-b border-background-secondary overflow-x-auto">
-              <TabsTrigger value="chat">Chat</TabsTrigger>
+            <TabsList className="justify-start px-4 py-2 border-b border-background-secondary overflow-x-auto" role="tablist">
+              <TabsTrigger value="chat" role="tab" aria-selected={activeView === 'chat'}>Chat</TabsTrigger>
               {agentViews.map((view, index) => (
-                <TabsTrigger key={index} value={view.name}>{view.name}</TabsTrigger>
+                <TabsTrigger key={index} value={view.name} role="tab" aria-selected={activeView === view.name}>{view.name}</TabsTrigger>
               ))}
-              <TabsTrigger value="progress">Progress</TabsTrigger>
+              <TabsTrigger value="progress" role="tab" aria-selected={activeView === 'progress'}>Progress</TabsTrigger>
             </TabsList>
-            <TabsContent value="chat" className="flex-1 flex flex-col">
+            <TabsContent value="chat" className="flex-1 flex flex-col" role="tabpanel" aria-labelledby="chat-tab">
               <div className="flex-1 flex justify-center items-center">
                 <div className="w-full max-w-3xl px-4">
                   <ScrollArea className={`h-[calc(100vh-14rem)] mt-4 ${isFirstInteraction ? 'hidden' : ''}`}>
                     {messages.map((message: Message, index: number) => (
-                      <div key={index} className={`chat-message ${message.role === 'ai' ? 'ai-message' : 'user-message'}`}>
+                      <div key={index} className={`chat-message ${message.role === 'ai' ? 'ai-message' : 'user-message'}`} role="log" aria-live="polite">
                         <p className={`${message.role === 'ai' ? 'font-primary' : 'font-secondary'} text-base leading-golden max-w-readable`}>
                           {message.content}
                         </p>
                       </div>
                     ))}
                     {isTyping && (
-                      <div className="chat-message ai-message">
+                      <div className="chat-message ai-message" role="log" aria-live="polite">
                         <p className="font-primary text-base leading-golden max-w-readable">{currentAiMessage}</p>
                       </div>
                     )}
@@ -397,13 +412,15 @@ const WebSplatInterface: React.FC = () => {
                           className="w-full bg-background-secondary text-foreground rounded-full pl-4 pr-12 py-2 focus:ring-2 focus:ring-accent-orange focus:border-transparent placeholder-foreground-secondary"
                           value={inputMessage}
                           onChange={(e: ChangeEvent<HTMLInputElement>) => setInputMessage(e.target.value)}
+                          aria-label="Message Input"
                         />
                         <Button
                           type="submit"
                           className={`absolute right-1 top-1/2 transform -translate-y-1/2 bg-accent-orange text-white hover:bg-[color-mix(in_srgb,var(--accent-orange)_85%,white)] transition-all duration-300 ${isSending ? 'animate-pulse' : ''} rounded-full w-8 h-8 flex items-center justify-center opacity-0 ${inputMessage.trim() !== '' ? 'opacity-100' : ''}`}
                           disabled={isSending || inputMessage.trim() === ''}
+                          aria-label="Send Message"
                         >
-                          <ArrowUp className="h-4 w-4" />
+                          <ArrowUp className="h-4 w-4" aria-hidden="true" />
                         </Button>
                       </div>
                     </form>
@@ -412,9 +429,9 @@ const WebSplatInterface: React.FC = () => {
               </div>
             </TabsContent>
             {agentViews.map((view, index) => (
-              <TabsContent key={index} value={view.name} className="flex-1 p-4 overflow-auto">
+              <TabsContent key={index} value={view.name} className="flex-1 p-4 overflow-auto" role="tabpanel" aria-labelledby={`${view.name}-tab`}>
                 <h2 className="text-2xl font-bold mb-4">{view.name}</h2>
-                <ul className="space-y-2">
+                <ul className="space-y-2" aria-label={`${view.name} Content`}>
                   {view.content.map((item, i) => (
                     <li key={i} className="bg-background-secondary p-4 rounded-lg max-w-readable">{item}</li>
                   ))}
@@ -423,20 +440,20 @@ const WebSplatInterface: React.FC = () => {
                   Explain {view.name} Strategy
                 </Button>
                 {strategyExplanation && (
-                  <div className="mt-4 bg-background-secondary p-4 rounded-lg max-w-readable">
+                  <div className="mt-4 bg-background-secondary p-4 rounded-lg max-w-readable" aria-live="polite">
                     <h3 className="text-xl font-bold mb-2">{view.name} Strategy Explanation:</h3>
                     <p className="leading-golden">{strategyExplanation}</p>
                   </div>
                 )}
               </TabsContent>
             ))}
-            <TabsContent value="progress" className="flex-1 p-4 overflow-auto">
+            <TabsContent value="progress" className="flex-1 p-4 overflow-auto" role="tabpanel" aria-labelledby="progress-tab">
               <h2 className="text-2xl font-bold mb-4">Progress Report</h2>
               <Button onClick={requestProgressReport} className="mb-4 bg-accent-orange hover:bg-[color-mix(in_srgb,var(--accent-orange)_85%,white)]">
                 Get Progress Report
               </Button>
               {progressReport && (
-                <div className="bg-background-secondary p-4 rounded-lg max-w-readable">
+                <div className="bg-background-secondary p-4 rounded-lg max-w-readable" aria-live="polite">
                   <pre className="whitespace-pre-wrap font-secondary text-sm leading-golden">{progressReport}</pre>
                 </div>
               )}
@@ -451,12 +468,14 @@ const WebSplatInterface: React.FC = () => {
           onClick={togglePreview}
           className="fixed top-1/2 right-0 transform -translate-y-1/2 z-40 bg-background-secondary hover:bg-background-nav rounded-l-md"
           title="Toggle Preview"
+          aria-label="Toggle Preview"
+          aria-expanded={previewOpen}
         >
-          <PanelRightOpen className="h-5 w-5" />
+          <PanelRightOpen className="h-5 w-5" aria-hidden="true" />
         </Button>
 
         {/* Real-time Preview Panel */}
-        <aside className={`fixed inset-0 bg-background-secondary text-foreground transition-transform duration-300 ease-in-out ${previewOpen ? 'translate-x-0' : 'translate-x-full'} z-50`}>
+        <aside className={`fixed inset-0 bg-background-secondary text-foreground transition-transform duration-300 ease-in-out ${previewOpen ? 'translate-x-0' : 'translate-x-full'} z-50`} role="complementary" aria-label="Real-time Preview">
           <div className="h-14 border-b border-background-nav flex items-center justify-between px-4">
             <h2 className="text-xl font-semibold">Real-time Preview</h2>
             <div className="flex space-x-2">
@@ -464,23 +483,28 @@ const WebSplatInterface: React.FC = () => {
                 variant={previewMode === 'desktop' ? 'default' : 'ghost'}
                 size="icon"
                 onClick={() => setPreviewMode('desktop')}
+                aria-label="Desktop Preview"
+                aria-pressed={previewMode === 'desktop'}
               >
-                <Laptop className="h-4 w-4" />
+                <Laptop className="h-4 w-4" aria-hidden="true" />
               </Button>
               <Button
                 variant={previewMode === 'mobile' ? 'default' : 'ghost'}
                 size="icon"
                 onClick={() => setPreviewMode('mobile')}
+                aria-label="Mobile Preview"
+                aria-pressed={previewMode === 'mobile'}
               >
-                <Smartphone className="h-4 w-4" />
+                <Smartphone className="h-4 w-4" aria-hidden="true" />
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={togglePreview}
                 className="ml-4"
+                aria-label="Close Preview"
               >
-                <PanelRightOpen className="h-5 w-5" />
+                <PanelRightOpen className="h-5 w-5" aria-hidden="true" />
               </Button>
             </div>
           </div>
@@ -495,14 +519,14 @@ const WebSplatInterface: React.FC = () => {
 
       {/* Mobile Navigation */}
       {isMobile && (
-        <nav className="mobile-nav">
-          <Button variant="ghost" onClick={() => setActiveView('chat')}>
+        <nav className="mobile-nav" role="navigation" aria-label="Mobile Navigation">
+          <Button variant="ghost" onClick={() => setActiveView('chat')} aria-label="Chat">
             Chat
           </Button>
-          <Button variant="ghost" onClick={toggleSidebar}>
+          <Button variant="ghost" onClick={toggleSidebar} aria-label="Menu">
             Menu
           </Button>
-          <Button variant="ghost" onClick={togglePreview}>
+          <Button variant="ghost" onClick={togglePreview} aria-label="Preview">
             Preview
           </Button>
         </nav>

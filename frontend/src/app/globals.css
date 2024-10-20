@@ -82,6 +82,23 @@ body {
     padding: 0.2em 0.4em;
     border-radius: 0.3em;
   }
+
+  /* Improved focus styles for better keyboard navigation */
+  *:focus {
+    outline: 2px solid var(--accent-orange);
+    outline-offset: 2px;
+  }
+
+  /* Remove focus styles for mouse users */
+  *:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Ensure focus styles are visible for keyboard users */
+  *:focus-visible {
+    outline: 2px solid var(--accent-orange);
+    outline-offset: 2px;
+  }
 }
 
 @layer components {
@@ -158,6 +175,19 @@ body {
   .transition-slow {
     @apply transition-all duration-400 ease-out-expo;
   }
+
+  /* Utility class for visually hidden elements (for screen readers) */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
 }
 
 /* Responsive typography */
@@ -196,5 +226,40 @@ body {
 @media (max-width: 640px) {
   .touch-target {
     @apply min-w-[44px] min-h-[44px];
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-fadeIn,
+  .animate-slideIn {
+    animation: none !important;
+  }
+
+  .transition-default,
+  .transition-slow {
+    transition: none !important;
+  }
+}
+
+/* High contrast mode improvements */
+@media (forced-colors: active) {
+  .btn,
+  .nav-item,
+  .card {
+    border: 2px solid currentColor;
+  }
+
+  a {
+    text-decoration: underline;
   }
 }
