@@ -34,9 +34,9 @@ const MinimalAutonomyControl: React.FC<{
         max="100"
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value))}
-        className="w-full h-2 bg-orange-200 rounded-full appearance-none cursor-pointer"
+        className="w-full h-2 bg-[var(--background-secondary)] rounded-full appearance-none cursor-pointer"
         style={{
-          background: `linear-gradient(to right, #FFA500 0%, #FFA500 ${value}%, #E5E5E5 ${value}%, #E5E5E5 100%)`,
+          background: `linear-gradient(to right, var(--accent-orange) 0%, var(--accent-orange) ${value}%, var(--background-secondary) ${value}%, var(--background-secondary) 100%)`,
         }}
       />
       <input
@@ -45,7 +45,7 @@ const MinimalAutonomyControl: React.FC<{
         max="100"
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value))}
-        className="w-12 text-center bg-transparent border border-gray-300 rounded"
+        className="w-12 text-center bg-transparent border border-[var(--background-secondary)] rounded text-[var(--foreground)]"
       />
     </div>
   );
@@ -54,7 +54,7 @@ const MinimalAutonomyControl: React.FC<{
 const LivePreview: React.FC<{ html: string; mode: PreviewMode }> = ({ html, mode }) => {
   return (
     <div className={`w-full h-full overflow-auto ${mode === 'mobile' ? 'max-w-[375px] mx-auto' : ''}`}>
-      <div className={`border-2 border-[#444444] rounded-lg overflow-hidden ${mode === 'mobile' ? 'w-[375px] h-[667px]' : 'w-full h-full'}`}>
+      <div className={`border-2 border-[var(--background-secondary)] rounded-lg overflow-hidden ${mode === 'mobile' ? 'w-[375px] h-[667px]' : 'w-full h-full'}`}>
         <iframe
           srcDoc={html}
           title="Live Preview"
@@ -89,7 +89,7 @@ const TypewriterText: React.FC<{ text: string }> = ({ text }) => {
     };
   }, [text]);
 
-  return <p className="text-[#AAAAAA] text-lg">{displayText}</p>;
+  return <p className="text-[var(--foreground-secondary)] text-lg">{displayText}</p>;
 };
 
 const WebSplatInterface: React.FC = () => {
@@ -227,11 +227,11 @@ const WebSplatInterface: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-[#2C2B28] text-[#888888]">
+    <div className="h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)]">
       {/* Top Bar */}
-      <header className="h-14 flex items-center justify-between px-4 z-10 bg-gradient-to-b from-[#2A2A2A] to-[#2C2B28]">
+      <header className="h-14 flex items-center justify-between px-4 z-10 bg-gradient-to-b from-[var(--background-secondary)] to-[var(--background)]">
         <div className="flex items-center space-x-4">
-          <span className="text-sm font-semibold text-[#888888]">WebSplat</span>
+          <span className="text-sm font-semibold text-[var(--foreground)]">WebSplat</span>
         </div>
         <div className="flex-1 flex justify-center items-center">
           {!isFirstInteraction && (
@@ -240,7 +240,7 @@ const WebSplatInterface: React.FC = () => {
                 value={projectName}
                 onChange={handleProjectNameChange}
                 onBlur={handleProjectNameBlur}
-                className="max-w-xs text-center bg-transparent border-none text-[#888888] focus:ring-0"
+                className="max-w-xs text-center bg-transparent border-none text-[var(--foreground)] focus:ring-0"
                 autoFocus
               />
             ) : (
@@ -250,7 +250,7 @@ const WebSplatInterface: React.FC = () => {
                 onMouseLeave={() => setIsHoveringProjectName(false)}
               >
                 <h1
-                  className={`text-xl font-bold text-[#888888] cursor-pointer hover:text-[#AAAAAA] transition-colors duration-300 ${projectName === 'Untitled Project' ? 'animate-pulse' : ''}`}
+                  className={`text-xl font-bold text-[var(--foreground)] cursor-pointer hover:text-[var(--foreground-secondary)] transition-colors duration-300 ${projectName === 'Untitled Project' ? 'animate-pulse' : ''}`}
                   onClick={() => setIsEditingProjectName(true)}
                 >
                   {projectName}
@@ -288,8 +288,8 @@ const WebSplatInterface: React.FC = () => {
         ></div>
 
         {/* Sidebar */}
-        <aside className={`w-64 p-4 flex flex-col bg-[#2A2A2A] text-[#888888] fixed h-[calc(100%-5rem)] mt-4 ml-4 mb-6 rounded-2xl transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} z-30`}>
-          <Button className="mb-6 bg-transparent text-[#999999] hover:bg-[#3A3A3A] transition-all duration-300 transform hover:scale-105">
+        <aside className={`w-64 p-4 flex flex-col bg-[var(--background-secondary)] text-[var(--foreground)] fixed h-[calc(100%-5rem)] mt-4 ml-4 mb-6 rounded-2xl transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} z-30`}>
+          <Button className="mb-6 bg-transparent text-[var(--foreground)] hover:bg-[var(--background-nav)] transition-all duration-300 transform hover:scale-105">
             <Plus className="mr-2 h-4 w-4" /> New Website
           </Button>
           <ScrollArea className="flex-1">
@@ -298,14 +298,14 @@ const WebSplatInterface: React.FC = () => {
                 <Button 
                   key={index}
                   variant="ghost" 
-                  className={`w-full justify-start hover:bg-[#3A3A3A] transition-all duration-300 group ${activeView === item.name ? 'bg-[#3A3A3A]' : ''}`}
+                  className={`w-full justify-start hover:bg-[var(--background-nav)] transition-all duration-300 group ${activeView === item.name ? 'bg-[var(--background-nav)]' : ''}`}
                   onClick={() => setActiveView(item.name)}
                 >
                   <div className="flex items-center w-full">
-                    <div className="p-2 rounded-lg mr-3 group-hover:bg-[#4A4A4A] transition-colors duration-300">
-                      <item.icon className="h-5 w-5 text-[#888888] group-hover:text-[#AAAAAA] transition-colors duration-300" />
+                    <div className="p-2 rounded-lg mr-3 group-hover:bg-[var(--background)] transition-colors duration-300">
+                      <item.icon className="h-5 w-5 text-[var(--foreground)] group-hover:text-[var(--foreground-secondary)] transition-colors duration-300" />
                     </div>
-                    <span className="text-[#888888] group-hover:text-[#AAAAAA] transition-colors duration-300 text-sm">{item.name}</span>
+                    <span className="text-[var(--foreground)] group-hover:text-[var(--foreground-secondary)] transition-colors duration-300 text-sm">{item.name}</span>
                   </div>
                 </Button>
               ))}
@@ -323,9 +323,9 @@ const WebSplatInterface: React.FC = () => {
         </aside>
 
         {/* Main Content */}
-        <main className={`flex-1 flex flex-col overflow-hidden bg-[#2C2B28] text-[#999999] transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
+        <main className={`flex-1 flex flex-col overflow-hidden bg-[var(--background)] text-[var(--foreground)] transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
           <Tabs value={activeView} onValueChange={setActiveView} className="flex-1 flex flex-col">
-            <TabsList className="justify-start px-4 py-2 border-b border-[#333333]">
+            <TabsList className="justify-start px-4 py-2 border-b border-[var(--background-secondary)]">
               <TabsTrigger value="chat">Chat</TabsTrigger>
               {agentViews.map((view, index) => (
                 <TabsTrigger key={index} value={view.name}>{view.name}</TabsTrigger>
@@ -337,14 +337,14 @@ const WebSplatInterface: React.FC = () => {
                 <div className="w-3/5 max-w-3xl">
                   <ScrollArea className={`h-[calc(100vh-10rem)] mt-4 ${isFirstInteraction ? 'hidden' : ''}`}>
                     {messages.map((message: Message, index: number) => (
-                      <div key={index} className={`mb-4 ${message.role === 'ai' ? 'bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl' : 'bg-[#21201C] text-[#E5E5E2] p-3 rounded-2xl'}`}>
+                      <div key={index} className={`mb-4 ${message.role === 'ai' ? 'bg-[var(--background-secondary)] text-[var(--foreground)] p-3 rounded-2xl' : 'bg-[var(--background-nav)] text-[var(--foreground)] p-3 rounded-2xl'}`}>
                         <p className={message.role === 'ai' ? 'font-tiempos text-base' : 'font-styrene text-[15px]'}>
                           {message.content}
                         </p>
                       </div>
                     ))}
                     {isTyping && (
-                      <div className="mb-4 bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl">
+                      <div className="mb-4 bg-[var(--background-secondary)] text-[var(--foreground)] p-3 rounded-2xl">
                         <p className="font-tiempos text-base">{currentAiMessage}</p>
                       </div>
                     )}
@@ -365,13 +365,13 @@ const WebSplatInterface: React.FC = () => {
                       <div className="relative flex-1">
                         <Input
                           placeholder={isFirstInteraction ? "Message Eden" : "Reply to Eden..."}
-                          className="w-full bg-[#31312E] text-[#E5E5E2] rounded-full pl-4 pr-12 py-2 focus:ring-2 focus:ring-[#444444] focus:border-transparent placeholder-[#A6A39A]"
+                          className="w-full bg-[var(--background-secondary)] text-[var(--foreground)] rounded-full pl-4 pr-12 py-2 focus:ring-2 focus:ring-[var(--accent-orange)] focus:border-transparent placeholder-[var(--foreground-secondary)]"
                           value={inputMessage}
                           onChange={(e: ChangeEvent<HTMLInputElement>) => setInputMessage(e.target.value)}
                         />
                         <Button
                           type="submit"
-                          className={`absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#A3512B] text-white hover:bg-[#B5613B] transition-all duration-300 ${isSending ? 'animate-pulse' : ''} rounded-full w-8 h-8 flex items-center justify-center opacity-0 ${inputMessage.trim() !== '' ? 'opacity-100' : ''}`}
+                          className={`absolute right-1 top-1/2 transform -translate-y-1/2 bg-[var(--accent-orange)] text-white hover:bg-[color-mix(in_srgb,var(--accent-orange)_85%,white)] transition-all duration-300 ${isSending ? 'animate-pulse' : ''} rounded-full w-8 h-8 flex items-center justify-center opacity-0 ${inputMessage.trim() !== '' ? 'opacity-100' : ''}`}
                           disabled={isSending || inputMessage.trim() === ''}
                         >
                           <ArrowUp className="h-4 w-4" />
@@ -387,14 +387,14 @@ const WebSplatInterface: React.FC = () => {
                 <h2 className="text-xl font-bold mb-4">{view.name}</h2>
                 <ul className="space-y-2">
                   {view.content.map((item, i) => (
-                    <li key={i} className="bg-[#31312E] p-2 rounded">{item}</li>
+                    <li key={i} className="bg-[var(--background-secondary)] p-2 rounded">{item}</li>
                   ))}
                 </ul>
-                <Button onClick={() => requestStrategyExplanation(view.name)} className="mt-4">
+                <Button onClick={() => requestStrategyExplanation(view.name)} className="mt-4 bg-[var(--accent-purple)] hover:bg-[color-mix(in_srgb,var(--accent-purple)_85%,white)]">
                   Explain {view.name} Strategy
                 </Button>
                 {strategyExplanation && (
-                  <div className="mt-4 bg-[#31312E] p-3 rounded">
+                  <div className="mt-4 bg-[var(--background-secondary)] p-3 rounded">
                     <h3 className="font-bold mb-2">{view.name} Strategy Explanation:</h3>
                     <p>{strategyExplanation}</p>
                   </div>
@@ -403,11 +403,11 @@ const WebSplatInterface: React.FC = () => {
             ))}
             <TabsContent value="progress" className="flex-1 p-4 overflow-auto">
               <h2 className="text-xl font-bold mb-4">Progress Report</h2>
-              <Button onClick={requestProgressReport} className="mb-4">
+              <Button onClick={requestProgressReport} className="mb-4 bg-[var(--accent-orange)] hover:bg-[color-mix(in_srgb,var(--accent-orange)_85%,white)]">
                 Get Progress Report
               </Button>
               {progressReport && (
-                <div className="bg-[#31312E] p-3 rounded">
+                <div className="bg-[var(--background-secondary)] p-3 rounded">
                   <pre className="whitespace-pre-wrap">{progressReport}</pre>
                 </div>
               )}
@@ -420,15 +420,15 @@ const WebSplatInterface: React.FC = () => {
           variant="ghost"
           size="icon"
           onClick={togglePreview}
-          className="fixed top-1/2 right-0 transform -translate-y-1/2 z-40 bg-[#2A2A2A] hover:bg-[#3A3A3A] rounded-l-md"
+          className="fixed top-1/2 right-0 transform -translate-y-1/2 z-40 bg-[var(--background-secondary)] hover:bg-[var(--background-nav)] rounded-l-md"
           title="Toggle Preview"
         >
           <PanelRightOpen className="h-5 w-5" />
         </Button>
 
         {/* Real-time Preview Panel */}
-        <aside className={`fixed inset-0 bg-[#2A2A2A] text-[#888888] transition-transform duration-300 ease-in-out ${previewOpen ? 'translate-x-0' : 'translate-x-full'} z-50`}>
-          <div className="h-14 border-b border-[#333333] flex items-center justify-between px-4">
+        <aside className={`fixed inset-0 bg-[var(--background-secondary)] text-[var(--foreground)] transition-transform duration-300 ease-in-out ${previewOpen ? 'translate-x-0' : 'translate-x-full'} z-50`}>
+          <div className="h-14 border-b border-[var(--background-nav)] flex items-center justify-between px-4">
             <h2 className="font-semibold">Real-time Preview</h2>
             <div className="flex space-x-2">
               <Button
@@ -458,7 +458,7 @@ const WebSplatInterface: React.FC = () => {
           <div className="flex-1 p-4 overflow-auto h-[calc(100vh-3.5rem)]">
             <LivePreview html={generatedHtml} mode={previewMode} />
           </div>
-          <div className="p-2 text-sm text-[#777777] text-center">
+          <div className="p-2 text-sm text-[var(--foreground-secondary)] text-center">
             Note: This preview updates live as the AI generates the website code.
           </div>
         </aside>
