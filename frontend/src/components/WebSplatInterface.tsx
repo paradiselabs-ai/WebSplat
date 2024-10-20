@@ -6,7 +6,7 @@ import { Input } from "./ui/input";
 import { ScrollArea } from "./ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
-import { PanelRightOpen, Settings, Plus, Laptop, Smartphone, Layout, DollarSign, Search, BarChart2, Cloud, Edit2, ArrowUp } from 'lucide-react';
+import { PanelRightOpen, Settings, Plus, Laptop, Smartphone, Layout, DollarSign, Search, BarChart2, Cloud, Edit2, ArrowUp, Menu } from 'lucide-react';
 import axios from 'axios';
 
 interface Message {
@@ -34,7 +34,7 @@ const MinimalAutonomyControl: React.FC<{
         max="100"
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value))}
-        className="w-full h-2 bg-[var(--background-secondary)] rounded-full appearance-none cursor-pointer"
+        className="w-full h-2 bg-background-secondary rounded-full appearance-none cursor-pointer"
         style={{
           background: `linear-gradient(to right, var(--accent-orange) 0%, var(--accent-orange) ${value}%, var(--background-secondary) ${value}%, var(--background-secondary) 100%)`,
         }}
@@ -45,7 +45,7 @@ const MinimalAutonomyControl: React.FC<{
         max="100"
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value))}
-        className="w-12 text-center bg-transparent border border-[var(--background-secondary)] rounded text-[var(--foreground)]"
+        className="w-12 text-center bg-transparent border border-background-secondary rounded text-foreground"
       />
     </div>
   );
@@ -54,7 +54,7 @@ const MinimalAutonomyControl: React.FC<{
 const LivePreview: React.FC<{ html: string; mode: PreviewMode }> = ({ html, mode }) => {
   return (
     <div className={`w-full h-full overflow-auto ${mode === 'mobile' ? 'max-w-[375px] mx-auto' : ''}`}>
-      <div className={`border-2 border-[var(--background-secondary)] rounded-lg overflow-hidden ${mode === 'mobile' ? 'w-[375px] h-[667px]' : 'w-full h-full'}`}>
+      <div className={`border-2 border-background-secondary rounded-lg overflow-hidden ${mode === 'mobile' ? 'w-[375px] h-[667px]' : 'w-full h-full'}`}>
         <iframe
           srcDoc={html}
           title="Live Preview"
@@ -89,7 +89,7 @@ const TypewriterText: React.FC<{ text: string }> = ({ text }) => {
     };
   }, [text]);
 
-  return <p className="text-[var(--foreground-secondary)] text-lg">{displayText}</p>;
+  return <p className="text-foreground-secondary text-lg font-primary leading-golden">{displayText}</p>;
 };
 
 const WebSplatInterface: React.FC = () => {
@@ -118,8 +118,10 @@ const WebSplatInterface: React.FC = () => {
   const [activeView, setActiveView] = useState<string>('chat');
   const [progressReport, setProgressReport] = useState<string>('');
   const [strategyExplanation, setStrategyExplanation] = useState<string>('');
+  const [isMobile, setIsMobile] = useState<boolean>(false);
 
   const togglePreview = () => setPreviewOpen(!previewOpen);
+  const toggleSidebar = () => setSidebarOpen(!sidebarOpen);
 
   const handleSendMessage = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -190,6 +192,19 @@ const WebSplatInterface: React.FC = () => {
   };
 
   useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    handleResize();
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       setCursorPosition({ x: e.clientX, y: e.clientY });
     };
@@ -202,16 +217,18 @@ const WebSplatInterface: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const windowHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
-    const tolerance = 50; // Reduced tolerance for triggering
+    if (!isMobile) {
+      const windowHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
+      const tolerance = 50;
 
-    if ((cursorPosition.x <= tolerance && cursorPosition.y >= windowHeight / 2 - tolerance && cursorPosition.y <= windowHeight / 2 + tolerance) || 
-        (cursorPosition.x <= tolerance && cursorPosition.y >= windowHeight - tolerance)) {
-      setSidebarOpen(true);
-    } else if (cursorPosition.x > 300 && sidebarOpen) {
-      setSidebarOpen(false);
+      if ((cursorPosition.x <= tolerance && cursorPosition.y >= windowHeight / 2 - tolerance && cursorPosition.y <= windowHeight / 2 + tolerance) || 
+          (cursorPosition.x <= tolerance && cursorPosition.y >= windowHeight - tolerance)) {
+        setSidebarOpen(true);
+      } else if (cursorPosition.x > 300 && sidebarOpen) {
+        setSidebarOpen(false);
+      }
     }
-  }, [cursorPosition, sidebarOpen]);
+  }, [cursorPosition, sidebarOpen, isMobile]);
 
   const gradientStyle = {
     background: `linear-gradient(to right, rgba(42, 42, 42, ${Math.max(0, 1 - cursorPosition.x / 300)}) 0%, rgba(42, 42, 42, 0) 100%)`,
@@ -227,11 +244,16 @@ const WebSplatInterface: React.FC = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col bg-[var(--background)] text-[var(--foreground)]">
+    <div className="h-screen flex flex-col bg-background text-foreground font-primary">
       {/* Top Bar */}
-      <header className="h-14 flex items-center justify-between px-4 z-10 bg-gradient-to-b from-[var(--background-secondary)] to-[var(--background)]">
+      <header className="h-14 flex items-center justify-between px-4 z-10 bg-gradient-to-b from-background-secondary to-background">
         <div className="flex items-center space-x-4">
-          <span className="text-sm font-semibold text-[var(--foreground)]">WebSplat</span>
+          {isMobile && (
+            <Button variant="ghost" size="icon" onClick={toggleSidebar} className="lg:hidden">
+              <Menu className="h-5 w-5" />
+            </Button>
+          )}
+          <span className="text-sm font-semibold text-foreground">WebSplat</span>
         </div>
         <div className="flex-1 flex justify-center items-center">
           {!isFirstInteraction && (
@@ -240,7 +262,7 @@ const WebSplatInterface: React.FC = () => {
                 value={projectName}
                 onChange={handleProjectNameChange}
                 onBlur={handleProjectNameBlur}
-                className="max-w-xs text-center bg-transparent border-none text-[var(--foreground)] focus:ring-0"
+                className="max-w-xs text-center bg-transparent border-none text-foreground focus:ring-0"
                 autoFocus
               />
             ) : (
@@ -250,7 +272,7 @@ const WebSplatInterface: React.FC = () => {
                 onMouseLeave={() => setIsHoveringProjectName(false)}
               >
                 <h1
-                  className={`text-xl font-bold text-[var(--foreground)] cursor-pointer hover:text-[var(--foreground-secondary)] transition-colors duration-300 ${projectName === 'Untitled Project' ? 'animate-pulse' : ''}`}
+                  className={`text-2xl font-bold text-foreground cursor-pointer hover:text-foreground-secondary transition-colors duration-300 ${projectName === 'Untitled Project' ? 'animate-pulse' : ''}`}
                   onClick={() => setIsEditingProjectName(true)}
                 >
                   {projectName}
@@ -282,50 +304,57 @@ const WebSplatInterface: React.FC = () => {
 
       <div className="flex-1 flex overflow-hidden">
         {/* Gradient overlay */}
-        <div
-          className="fixed top-14 left-0 w-64 h-[calc(100%-5rem)] mt-4 ml-4 pointer-events-none z-20 transition-opacity duration-300 rounded-2xl"
-          style={gradientStyle}
-        ></div>
+        {!isMobile && (
+          <div
+            className="fixed top-14 left-0 w-64 h-[calc(100%-5rem)] mt-4 ml-4 pointer-events-none z-20 transition-opacity duration-300 rounded-2xl"
+            style={gradientStyle}
+          ></div>
+        )}
 
         {/* Sidebar */}
-        <aside className={`w-64 p-4 flex flex-col bg-[var(--background-secondary)] text-[var(--foreground)] fixed h-[calc(100%-5rem)] mt-4 ml-4 mb-6 rounded-2xl transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} z-30`}>
-          <Button className="mb-6 bg-transparent text-[var(--foreground)] hover:bg-[var(--background-nav)] transition-all duration-300 transform hover:scale-105">
-            <Plus className="mr-2 h-4 w-4" /> New Website
-          </Button>
-          <ScrollArea className="flex-1">
-            <nav className="space-y-3">
-              {agentViews.map((item, index) => (
-                <Button 
-                  key={index}
-                  variant="ghost" 
-                  className={`w-full justify-start hover:bg-[var(--background-nav)] transition-all duration-300 group ${activeView === item.name ? 'bg-[var(--background-nav)]' : ''}`}
-                  onClick={() => setActiveView(item.name)}
-                >
-                  <div className="flex items-center w-full">
-                    <div className="p-2 rounded-lg mr-3 group-hover:bg-[var(--background)] transition-colors duration-300">
-                      <item.icon className="h-5 w-5 text-[var(--foreground)] group-hover:text-[var(--foreground-secondary)] transition-colors duration-300" />
+        <aside className={`sidebar ${sidebarOpen ? '' : 'sidebar-closed'} ${isMobile ? 'w-full' : 'w-64'}`}>
+          <div className="p-4 flex flex-col h-full">
+            <Button className="mb-6 bg-transparent text-foreground hover:bg-background-nav transition-all duration-300 transform hover:scale-105">
+              <Plus className="mr-2 h-4 w-4" /> New Website
+            </Button>
+            <ScrollArea className="flex-1">
+              <nav className="space-y-3">
+                {agentViews.map((item, index) => (
+                  <Button 
+                    key={index}
+                    variant="ghost" 
+                    className={`w-full justify-start hover:bg-background-nav transition-all duration-300 group ${activeView === item.name ? 'bg-background-nav' : ''}`}
+                    onClick={() => {
+                      setActiveView(item.name);
+                      if (isMobile) setSidebarOpen(false);
+                    }}
+                  >
+                    <div className="flex items-center w-full">
+                      <div className="p-2 rounded-lg mr-3 group-hover:bg-background transition-colors duration-300">
+                        <item.icon className="h-5 w-5 text-foreground group-hover:text-foreground-secondary transition-colors duration-300" />
+                      </div>
+                      <span className="text-foreground group-hover:text-foreground-secondary transition-colors duration-300 text-sm">{item.name}</span>
                     </div>
-                    <span className="text-[var(--foreground)] group-hover:text-[var(--foreground-secondary)] transition-colors duration-300 text-sm">{item.name}</span>
-                  </div>
-                </Button>
-              ))}
-            </nav>
-          </ScrollArea>
-          <div className="mt-6">
-            <label htmlFor="autonomy-slider" className="block text-xs font-medium mb-2">
-              AI Autonomy Level: {autonomyLevel}%
-            </label>
-            <MinimalAutonomyControl
-              value={autonomyLevel}
-              onChange={setAutonomyLevel}
-            />
+                  </Button>
+                ))}
+              </nav>
+            </ScrollArea>
+            <div className="mt-6">
+              <label htmlFor="autonomy-slider" className="block text-xs font-medium mb-2">
+                AI Autonomy Level: {autonomyLevel}%
+              </label>
+              <MinimalAutonomyControl
+                value={autonomyLevel}
+                onChange={setAutonomyLevel}
+              />
+            </div>
           </div>
         </aside>
 
         {/* Main Content */}
-        <main className={`flex-1 flex flex-col overflow-hidden bg-[var(--background)] text-[var(--foreground)] transition-all duration-300 ease-in-out ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
+        <main className={`flex-1 flex flex-col overflow-hidden bg-background text-foreground transition-all duration-300 ease-out-expo ${sidebarOpen && !isMobile ? 'ml-64' : 'ml-0'}`}>
           <Tabs value={activeView} onValueChange={setActiveView} className="flex-1 flex flex-col">
-            <TabsList className="justify-start px-4 py-2 border-b border-[var(--background-secondary)]">
+            <TabsList className="justify-start px-4 py-2 border-b border-background-secondary overflow-x-auto">
               <TabsTrigger value="chat">Chat</TabsTrigger>
               {agentViews.map((view, index) => (
                 <TabsTrigger key={index} value={view.name}>{view.name}</TabsTrigger>
@@ -334,18 +363,18 @@ const WebSplatInterface: React.FC = () => {
             </TabsList>
             <TabsContent value="chat" className="flex-1 flex flex-col">
               <div className="flex-1 flex justify-center items-center">
-                <div className="w-3/5 max-w-3xl">
-                  <ScrollArea className={`h-[calc(100vh-10rem)] mt-4 ${isFirstInteraction ? 'hidden' : ''}`}>
+                <div className="w-full max-w-3xl px-4">
+                  <ScrollArea className={`h-[calc(100vh-14rem)] mt-4 ${isFirstInteraction ? 'hidden' : ''}`}>
                     {messages.map((message: Message, index: number) => (
-                      <div key={index} className={`mb-4 ${message.role === 'ai' ? 'bg-[var(--background-secondary)] text-[var(--foreground)] p-3 rounded-2xl' : 'bg-[var(--background-nav)] text-[var(--foreground)] p-3 rounded-2xl'}`}>
-                        <p className={message.role === 'ai' ? 'font-tiempos text-base' : 'font-styrene text-[15px]'}>
+                      <div key={index} className={`chat-message ${message.role === 'ai' ? 'ai-message' : 'user-message'}`}>
+                        <p className={`${message.role === 'ai' ? 'font-primary' : 'font-secondary'} text-base leading-golden max-w-readable`}>
                           {message.content}
                         </p>
                       </div>
                     ))}
                     {isTyping && (
-                      <div className="mb-4 bg-[var(--background-secondary)] text-[var(--foreground)] p-3 rounded-2xl">
-                        <p className="font-tiempos text-base">{currentAiMessage}</p>
+                      <div className="chat-message ai-message">
+                        <p className="font-primary text-base leading-golden max-w-readable">{currentAiMessage}</p>
                       </div>
                     )}
                   </ScrollArea>
@@ -365,13 +394,13 @@ const WebSplatInterface: React.FC = () => {
                       <div className="relative flex-1">
                         <Input
                           placeholder={isFirstInteraction ? "Message Eden" : "Reply to Eden..."}
-                          className="w-full bg-[var(--background-secondary)] text-[var(--foreground)] rounded-full pl-4 pr-12 py-2 focus:ring-2 focus:ring-[var(--accent-orange)] focus:border-transparent placeholder-[var(--foreground-secondary)]"
+                          className="w-full bg-background-secondary text-foreground rounded-full pl-4 pr-12 py-2 focus:ring-2 focus:ring-accent-orange focus:border-transparent placeholder-foreground-secondary"
                           value={inputMessage}
                           onChange={(e: ChangeEvent<HTMLInputElement>) => setInputMessage(e.target.value)}
                         />
                         <Button
                           type="submit"
-                          className={`absolute right-1 top-1/2 transform -translate-y-1/2 bg-[var(--accent-orange)] text-white hover:bg-[color-mix(in_srgb,var(--accent-orange)_85%,white)] transition-all duration-300 ${isSending ? 'animate-pulse' : ''} rounded-full w-8 h-8 flex items-center justify-center opacity-0 ${inputMessage.trim() !== '' ? 'opacity-100' : ''}`}
+                          className={`absolute right-1 top-1/2 transform -translate-y-1/2 bg-accent-orange text-white hover:bg-[color-mix(in_srgb,var(--accent-orange)_85%,white)] transition-all duration-300 ${isSending ? 'animate-pulse' : ''} rounded-full w-8 h-8 flex items-center justify-center opacity-0 ${inputMessage.trim() !== '' ? 'opacity-100' : ''}`}
                           disabled={isSending || inputMessage.trim() === ''}
                         >
                           <ArrowUp className="h-4 w-4" />
@@ -384,31 +413,31 @@ const WebSplatInterface: React.FC = () => {
             </TabsContent>
             {agentViews.map((view, index) => (
               <TabsContent key={index} value={view.name} className="flex-1 p-4 overflow-auto">
-                <h2 className="text-xl font-bold mb-4">{view.name}</h2>
+                <h2 className="text-2xl font-bold mb-4">{view.name}</h2>
                 <ul className="space-y-2">
                   {view.content.map((item, i) => (
-                    <li key={i} className="bg-[var(--background-secondary)] p-2 rounded">{item}</li>
+                    <li key={i} className="bg-background-secondary p-4 rounded-lg max-w-readable">{item}</li>
                   ))}
                 </ul>
-                <Button onClick={() => requestStrategyExplanation(view.name)} className="mt-4 bg-[var(--accent-purple)] hover:bg-[color-mix(in_srgb,var(--accent-purple)_85%,white)]">
+                <Button onClick={() => requestStrategyExplanation(view.name)} className="mt-4 bg-accent-purple hover:bg-[color-mix(in_srgb,var(--accent-purple)_85%,white)]">
                   Explain {view.name} Strategy
                 </Button>
                 {strategyExplanation && (
-                  <div className="mt-4 bg-[var(--background-secondary)] p-3 rounded">
-                    <h3 className="font-bold mb-2">{view.name} Strategy Explanation:</h3>
-                    <p>{strategyExplanation}</p>
+                  <div className="mt-4 bg-background-secondary p-4 rounded-lg max-w-readable">
+                    <h3 className="text-xl font-bold mb-2">{view.name} Strategy Explanation:</h3>
+                    <p className="leading-golden">{strategyExplanation}</p>
                   </div>
                 )}
               </TabsContent>
             ))}
             <TabsContent value="progress" className="flex-1 p-4 overflow-auto">
-              <h2 className="text-xl font-bold mb-4">Progress Report</h2>
-              <Button onClick={requestProgressReport} className="mb-4 bg-[var(--accent-orange)] hover:bg-[color-mix(in_srgb,var(--accent-orange)_85%,white)]">
+              <h2 className="text-2xl font-bold mb-4">Progress Report</h2>
+              <Button onClick={requestProgressReport} className="mb-4 bg-accent-orange hover:bg-[color-mix(in_srgb,var(--accent-orange)_85%,white)]">
                 Get Progress Report
               </Button>
               {progressReport && (
-                <div className="bg-[var(--background-secondary)] p-3 rounded">
-                  <pre className="whitespace-pre-wrap">{progressReport}</pre>
+                <div className="bg-background-secondary p-4 rounded-lg max-w-readable">
+                  <pre className="whitespace-pre-wrap font-secondary text-sm leading-golden">{progressReport}</pre>
                 </div>
               )}
             </TabsContent>
@@ -420,16 +449,16 @@ const WebSplatInterface: React.FC = () => {
           variant="ghost"
           size="icon"
           onClick={togglePreview}
-          className="fixed top-1/2 right-0 transform -translate-y-1/2 z-40 bg-[var(--background-secondary)] hover:bg-[var(--background-nav)] rounded-l-md"
+          className="fixed top-1/2 right-0 transform -translate-y-1/2 z-40 bg-background-secondary hover:bg-background-nav rounded-l-md"
           title="Toggle Preview"
         >
           <PanelRightOpen className="h-5 w-5" />
         </Button>
 
         {/* Real-time Preview Panel */}
-        <aside className={`fixed inset-0 bg-[var(--background-secondary)] text-[var(--foreground)] transition-transform duration-300 ease-in-out ${previewOpen ? 'translate-x-0' : 'translate-x-full'} z-50`}>
-          <div className="h-14 border-b border-[var(--background-nav)] flex items-center justify-between px-4">
-            <h2 className="font-semibold">Real-time Preview</h2>
+        <aside className={`fixed inset-0 bg-background-secondary text-foreground transition-transform duration-300 ease-in-out ${previewOpen ? 'translate-x-0' : 'translate-x-full'} z-50`}>
+          <div className="h-14 border-b border-background-nav flex items-center justify-between px-4">
+            <h2 className="text-xl font-semibold">Real-time Preview</h2>
             <div className="flex space-x-2">
               <Button
                 variant={previewMode === 'desktop' ? 'default' : 'ghost'}
@@ -458,11 +487,26 @@ const WebSplatInterface: React.FC = () => {
           <div className="flex-1 p-4 overflow-auto h-[calc(100vh-3.5rem)]">
             <LivePreview html={generatedHtml} mode={previewMode} />
           </div>
-          <div className="p-2 text-sm text-[var(--foreground-secondary)] text-center">
+          <div className="p-2 text-sm text-foreground-secondary text-center">
             Note: This preview updates live as the AI generates the website code.
           </div>
         </aside>
       </div>
+
+      {/* Mobile Navigation */}
+      {isMobile && (
+        <nav className="mobile-nav">
+          <Button variant="ghost" onClick={() => setActiveView('chat')}>
+            Chat
+          </Button>
+          <Button variant="ghost" onClick={toggleSidebar}>
+            Menu
+          </Button>
+          <Button variant="ghost" onClick={togglePreview}>
+            Preview
+          </Button>
+        </nav>
+      )}
     </div>
   );
 };

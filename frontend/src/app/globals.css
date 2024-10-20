@@ -12,21 +12,58 @@
   --accent-purple: #4A4794;
   --success: #4CAF50;
   --error: #F44336;
+
+  /* Typography */
+  --font-primary: 'Geist', Arial, sans-serif;
+  --font-secondary: 'Geist Mono', monospace;
+  --font-size-base: 16px;
+  --line-height-base: 1.618;
+}
+
+@font-face {
+  font-family: 'Geist';
+  src: url('./fonts/GeistVF.woff') format('woff');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Geist Mono';
+  src: url('./fonts/GeistMonoVF.woff') format('woff');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: 'Geist', Arial, sans-serif;
+  font-family: var(--font-primary);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
 }
 
 @layer base {
   h1, h2, h3, h4, h5, h6 {
     color: var(--foreground);
+    font-weight: 700;
+    line-height: 1.2;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
   }
+
+  h1 { font-size: 4.236rem; }
+  h2 { font-size: 2.618rem; }
+  h3 { font-size: 1.618rem; }
+  h4 { font-size: 1rem; }
+  h5 { font-size: 0.618rem; }
+  h6 { font-size: 0.382rem; }
 
   p {
     color: var(--foreground-secondary);
+    margin-bottom: 1em;
+    max-width: 70ch;
   }
 
   a {
@@ -37,11 +74,19 @@ body {
   a:hover {
     color: color-mix(in srgb, var(--accent-orange) 85%, white);
   }
+
+  code {
+    font-family: var(--font-secondary);
+    font-size: 0.9em;
+    background-color: var(--background-secondary);
+    padding: 0.2em 0.4em;
+    border-radius: 0.3em;
+  }
 }
 
 @layer components {
   .btn {
-    @apply px-4 py-2 rounded transition-colors duration-300;
+    @apply px-4 py-2 rounded transition-colors duration-300 font-semibold;
   }
 
   .btn-primary {
@@ -63,24 +108,93 @@ body {
   .nav-item:hover {
     @apply bg-[color-mix(in_srgb,var(--background-nav)_85%,white)];
   }
+
+  .container {
+    @apply mx-auto px-4 sm:px-6 lg:px-8 max-w-container;
+  }
+
+  .sidebar {
+    @apply fixed top-0 left-0 h-full w-64 bg-background-secondary transform transition-transform duration-300 ease-out-expo z-30;
+  }
+
+  .sidebar-closed {
+    @apply -translate-x-full;
+  }
+
+  .main-content {
+    @apply transition-all duration-300 ease-out-expo;
+  }
+
+  .chat-message {
+    @apply p-4 rounded-lg mb-4 animate-fadeIn;
+  }
+
+  .user-message {
+    @apply bg-background-secondary text-foreground;
+  }
+
+  .ai-message {
+    @apply bg-background-nav text-foreground;
+  }
+
+  .input-container {
+    @apply fixed bottom-0 left-0 right-0 p-4 bg-background;
+  }
+
+  .mobile-nav {
+    @apply fixed bottom-0 left-0 right-0 bg-background-secondary p-2 flex justify-around items-center;
+  }
 }
 
 @layer utilities {
   .text-balance {
     text-wrap: balance;
   }
+
+  .transition-default {
+    @apply transition-all duration-250 ease-out-expo;
+  }
+
+  .transition-slow {
+    @apply transition-all duration-400 ease-out-expo;
+  }
 }
 
-@font-face {
-  font-family: 'Geist';
-  src: url('/fonts/GeistVF.woff') format('woff');
-  font-weight: 100 900;
-  font-style: normal;
+/* Responsive typography */
+@media (max-width: 640px) {
+  :root {
+    --font-size-base: 14px;
+  }
 }
 
-@font-face {
-  font-family: 'Geist Mono';
-  src: url('/fonts/GeistMonoVF.woff') format('woff');
-  font-weight: 100 900;
-  font-style: normal;
+@media (min-width: 1280px) {
+  :root {
+    --font-size-base: 18px;
+  }
+}
+
+/* Loading animation */
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.loading-dot {
+  @apply inline-block w-2 h-2 bg-accent-orange rounded-full mx-1;
+  animation: pulse 1.4s infinite ease-in-out;
+}
+
+.loading-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+/* Mobile-specific styles */
+@media (max-width: 640px) {
+  .touch-target {
+    @apply min-w-[44px] min-h-[44px];
+  }
 }
