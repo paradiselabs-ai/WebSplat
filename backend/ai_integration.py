@@ -6,7 +6,8 @@ import google.generativeai as genai
 import base64
 import tempfile
 import json
-from groundx import GroundX  # Import the GroundX RAG system
+from datetime import datetime
+from groundx import Groundx  # Fixed case sensitivity in import
 
 class AIIntegration:
     def __init__(self):
@@ -26,7 +27,7 @@ class AIIntegration:
         genai.configure(api_key=os.environ.get('GOOGLE_GEMINI_API_KEY'))
 
         # GroundX RAG setup
-        self.groundx = GroundX(api_key=os.environ.get('GROUNDX_API_KEY'))
+        self.groundx = Groundx(api_key=os.environ.get('GROUNDX_API_KEY'))
 
         # Initialize shared knowledge base
         self.shared_knowledge = {
@@ -36,6 +37,17 @@ class AIIntegration:
             "Analytics": [],
             "Deployment": []
         }
+
+        # Create initial bucket if none exists
+        try:
+            bucket_response = self.groundx.buckets.list()
+            if len(bucket_response.body["buckets"]) < 1:
+                self.groundx.buckets.create(name="websplat-bucket")
+                bucket_response = self.groundx.buckets.list()
+            self.bucket_id = bucket_response.body["buckets"][0]["bucketId"]
+        except Exception as e:
+            print(f"Error setting up GroundX bucket: {e}")
+            self.bucket_id = None
 
     def _get_google_credentials(self):
         credentials_base64 = os.environ.get('GOOGLE_APPLICATION_CREDENTIALS_BASE64')
@@ -59,23 +71,42 @@ class AIIntegration:
         return credentials
 
     def generate_text(self, prompt, model='o1', autonomy_level=50):
-        # Retrieve relevant information from the shared knowledge base
-        relevant_knowledge = self.groundx.retrieve(prompt, self.shared_knowledge)
-        
-        # Combine the prompt with relevant knowledge
-        enhanced_prompt = f"Relevant knowledge: {relevant_knowledge}\n\nUser prompt: {prompt}"
-        
-        if model == 'o1':
-            return self.o1_reasoning(enhanced_prompt, autonomy_level)
-        elif model == 'openai':
-            response = self.openai.completions.create(engine="text-davinci-002", prompt=enhanced_prompt, max_tokens=1000)
-            return response.choices[0].text.strip()
-        elif model == 'vertex':
-            return self.vertex_ai_reasoning(enhanced_prompt, autonomy_level)
-        elif model == 'gemini':
-            return self.gemini_reasoning(enhanced_prompt, autonomy_level)
-        else:
-            raise ValueError(f"Unsupported model: {model}")
+        try:
+            # Get relevant knowledge from GroundX
+            relevant_knowledge = ""
+            if self.bucket_id:
+                try:
+                    # List documents without bucket_id parameter
+                    docs = self.groundx.documents.list()
+                    if docs.body.get("documents"):
+                        # Search through existing documents
+                        search_results = self.groundx.search.content(
+                            id=self.bucket_id,
+                            query=prompt,
+                            next_token=None
+                        )
+                        if search_results.body.get("results"):
+                            relevant_knowledge = "\n".join([r.get("content", "") for r in search_results.body["results"]])
+                except Exception as e:
+                    print(f"Error retrieving knowledge from GroundX: {e}")
+            
+            # Combine the prompt with relevant knowledge
+            enhanced_prompt = f"Relevant knowledge: {relevant_knowledge}\n\nUser prompt: {prompt}"
+            
+            if model == 'o1':
+                return self.o1_reasoning(enhanced_prompt, autonomy_level)
+            elif model == 'openai':
+                response = self.openai.completions.create(engine="text-davinci-002", prompt=enhanced_prompt, max_tokens=1000)
+                return response.choices[0].text.strip()
+            elif model == 'vertex':
+                return self.vertex_ai_reasoning(enhanced_prompt, autonomy_level)
+            elif model == 'gemini':
+                return self.gemini_reasoning(enhanced_prompt, autonomy_level)
+            else:
+                raise ValueError(f"Unsupported model: {model}")
+        except Exception as e:
+            print(f"Error in generate_text: {e}")
+            return "I apologize, but I encountered an error processing your request. Please try again."
 
     def o1_reasoning(self, prompt, autonomy_level, model="openai/o1-mini"):
         """
@@ -135,8 +166,19 @@ class AIIntegration:
             "Deployment": "As a Deployment specialist, "
         }
         
-        # Retrieve relevant information from the shared knowledge base
-        relevant_knowledge = self.groundx.retrieve(prompt, self.shared_knowledge[agent_type])
+        # Get relevant knowledge from GroundX
+        relevant_knowledge = ""
+        if self.bucket_id:
+            try:
+                search_results = self.groundx.search.content(
+                    id=self.bucket_id,
+                    query=prompt,
+                    next_token=None
+                )
+                if search_results.body.get("results"):
+                    relevant_knowledge = "\n".join([r.get("content", "") for r in search_results.body["results"]])
+            except Exception as e:
+                print(f"Error retrieving knowledge from GroundX: {e}")
         
         full_prompt = f"{agent_prompts.get(agent_type, '')}{prompt}\n\nRelevant knowledge: {relevant_knowledge}"
         response = self.generate_text(full_prompt, model='gemini', autonomy_level=autonomy_level)
@@ -151,7 +193,35 @@ class AIIntegration:
         Update the shared knowledge base with new information.
         """
         self.shared_knowledge[agent_type].append(new_knowledge)
-        # Use GroundX to index the new knowledge
-        self.groundx.index(agent_type, new_knowledge)
+        
+        # Update GroundX knowledge base
+        if self.bucket_id:
+            try:
+                # Create a temporary file with the new knowledge
+                with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt') as temp_file:
+                    temp_file.write(new_knowledge)
+                    temp_file_path = temp_file.name
+
+                # Upload the file to GroundX
+                with open(temp_file_path, 'rb') as f:
+                    self.groundx.documents.ingest_local(
+                        body=[{
+                            "blob": f,
+                            "metadata": {
+                                "bucketId": self.bucket_id,
+                                "fileName": f"{agent_type.lower().replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+                                "fileType": "txt",
+                                "metadata": {
+                                    "type": agent_type,
+                                    "timestamp": datetime.now().isoformat()
+                                }
+                            }
+                        }]
+                    )
+
+                # Clean up the temporary file
+                os.unlink(temp_file_path)
+            except Exception as e:
+                print(f"Error updating GroundX knowledge base: {e}")
 
 ai = AIIntegration()

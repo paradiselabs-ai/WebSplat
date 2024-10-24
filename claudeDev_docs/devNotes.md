@@ -17,6 +17,8 @@ WebSplat is an AI-driven website creation platform that uses a hierarchical syst
 - Updated backend (main.py) to generate TSX preview based on AI responses
 - Modified WebSplatInterface.tsx to include a new "Preview" tab for displaying generated TSX code
 - Updated handleSendMessage function to set generatedHtml state with tsx_preview from backend response
+- Updated test files with additional logging and assertions
+- Ran backend tests and identified several issues that need to be addressed
 
 ## Current Focus
 - Rapidly integrating the backend with the frontend for a working MVP demo (Urgent)
@@ -32,6 +34,7 @@ WebSplat is an AI-driven website creation platform that uses a hierarchical syst
 - Implementing a real-time rendering system for the preview window
 - Setting up a system for serving the generated websites
 - Preparing for hosting and deployment on Google Cloud
+- Fixing issues identified in backend tests
 
 ## Technology Stack
 - Frontend: React, Next.js
@@ -114,6 +117,11 @@ WebSplat is an AI-driven website creation platform that uses a hierarchical syst
    - Test the workspace management system
    - Verify the real-time rendering of generated websites
    - Ensure proper collaboration between AI agents
+6. Fix issues identified in backend tests:
+   - Resolve missing workspace_id in consult endpoint response
+   - Fix 404 errors in preview and serve endpoints
+   - Address WebSocket connection 403 Forbidden error
+   - Ensure shared knowledge is properly updated with testimonials
 
 Remember to update this document regularly with new insights, solutions to challenges, and important development practices specific to WebSplat. As the project evolves, continually reassess and optimize the integration of various AI models and services.
 
@@ -155,3 +163,21 @@ Remember to update this document regularly with new insights, solutions to chall
 6. Update the frontend to handle the collaborative agent workflow and display real-time updates
 
 Continue to prioritize getting a working MVP that can create simple websites (e.g., portfolios, blogs, small company sites) before scaling up to more complex projects. Regularly update this document with new insights and development practices as the project evolves.
+
+## Known Issues
+1. Workspace ID is missing from the consult endpoint response
+2. Preview and serve endpoints are returning 404 errors
+3. WebSocket connection is receiving a 403 Forbidden error
+4. Shared knowledge is not being properly updated with testimonials
+
+## Performance Considerations
+- Monitor the response time of AI-generated content
+- Optimize WebSocket communication for real-time updates
+- Ensure efficient handling of workspace files and generated code
+
+## Security Considerations
+- Implement proper input validation and sanitization
+- Ensure secure handling of user data and generated code
+- Consider implementing rate limiting for API endpoints
+
+Remember to update these notes regularly as development progresses and new insights or challenges arise.

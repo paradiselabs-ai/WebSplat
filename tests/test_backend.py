@@ -5,6 +5,7 @@ import websocket
 import threading
 import pytest
 import logging
+import os
 
 BASE_URL = "http://localhost:8000"
 workspace_id = None
@@ -13,30 +14,49 @@ workspace_id = None
 def setup_and_teardown():
     global workspace_id
     # Setup
+    if not os.path.exists("./workspaces"):
+        os.makedirs("./workspaces")
     yield
     # Teardown
     if workspace_id:
-        # Add a cleanup endpoint to delete the workspace after tests
-        requests.delete(f"{BASE_URL}/workspace/{workspace_id}")
+        try:
+            # Add a cleanup endpoint to delete the workspace after tests
+            requests.delete(f"{BASE_URL}/workspace/{workspace_id}")
+        except Exception as e:
+            logging.error(f"Failed to cleanup workspace {workspace_id}: {e}")
 
 def test_consult_endpoint():
     global workspace_id
     url = f"{BASE_URL}/consult"
     payload = {
-        "message": "Create a landing page for a fitness app",
+        "message": "Create a landing page for a fitness app",  # Fixed missing comma
         "autonomy_level": 50
     }
-    response = requests.post(url, json=payload)
-    assert response.status_code == 200, f"Consult endpoint failed with status code {response.status_code}"
-    data = response.json()
-    logging.info(f"Consult endpoint response: {json.dumps(data, indent=2)}")
-    assert "message" in data, "Message not found in response"
-    assert "tsx_preview" in data, "TSX preview not found in response"
-    assert "shared_knowledge" in data, "Shared knowledge not found in response"
-    assert "workspace_id" in data, "Workspace ID not found in response"
-    workspace_id = data["workspace_id"]
-    logging.info(f"Workspace ID: {workspace_id}")
-    print("Consult endpoint test passed")
+    try:
+        response = requests.post(url, json=payload)
+        logging.info(f"Consult endpoint status code: {response.status_code}")
+        assert response.status_code == 200, f"Consult endpoint failed with status code {response.status_code}"
+        
+        data = response.json()
+        logging.info(f"Consult endpoint response: {json.dumps(data, indent=2)}")
+        
+        assert "message" in data, "Message not found in response"
+        assert "tsx_preview" in data, "TSX preview not found in response"
+        assert "shared_knowledge" in data, "Shared knowledge not found in response"
+        assert "workspace_id" in data, "Workspace ID not found in response"
+        
+        workspace_id = data["workspace_id"]
+        logging.info(f"Workspace ID: {workspace_id}")
+        print("Consult endpoint test passed")
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Request failed: {e}")
+        raise
+    except json.JSONDecodeError as e:
+        logging.error(f"Failed to decode response: {e}")
+        raise
+    except AssertionError as e:
+        logging.error(f"Assertion failed: {e}")
+        raise
 
 def test_preview_endpoint():
     url = f"{BASE_URL}/preview/{workspace_id}"

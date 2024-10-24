@@ -72,17 +72,23 @@ async def generate_tsx_preview(message: str, workspace_id: str) -> Dict[str, str
     {message}
     
     The component should:
-    1. Use modern React practices (functional components, hooks)
-    2. Include basic styling using CSS-in-JS (styled-components syntax)
-    3. Be responsive and accessible
-    4. Include placeholder data where appropriate
-    5. Be a complete, working component that can be rendered
+    1. Start with 'import React from "react";' as the first line
+    2. Use modern React practices (functional components, hooks)
+    3. Include basic styling using CSS-in-JS (styled-components syntax)
+    4. Be responsive and accessible
+    5. Include placeholder data where appropriate
+    6. Be a complete, working component that can be rendered
 
     Provide only the TSX code, without any explanations or markdown formatting.
+    The first line MUST be 'import React from "react";'
     """
     
     consultation_response = await asyncio.to_thread(ai.generate_text, consultation_prompt, 'gemini', 80)
     tsx_code = await asyncio.to_thread(ai.generate_text, tsx_prompt, 'gemini', 80)
+    
+    # Ensure React import is present
+    if not tsx_code.strip().startswith('import React'):
+        tsx_code = 'import React from "react";\n' + tsx_code.strip()
     
     # Save the TSX code to the workspace
     workspace_manager.write_file(workspace_id, "App.tsx", tsx_code.strip())
