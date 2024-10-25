@@ -60,11 +60,21 @@ class AgentRequest(BaseModel):
 # WebSocket connections
 active_connections: Dict[str, WebSocket] = {}
 
+# Knowledge categorization keywords
+KNOWLEDGE_CATEGORIES = {
+    "UI Design": ["ui", "user interface", "design", "layout", "style", "component", "testimonial", "section", "visual", "display"],
+    "Monetization": ["monetization", "revenue", "payment", "subscription", "pricing", "premium"],
+    "SEO": ["seo", "search engine", "meta", "keyword", "ranking", "optimization"],
+    "Analytics": ["analytics", "tracking", "metrics", "data", "performance", "monitoring"],
+    "Deployment": ["deployment", "hosting", "server", "production", "launch", "release"]
+}
+
 async def generate_tsx_preview(message: str, workspace_id: str) -> Dict[str, str]:
     consultation_prompt = f"""
     You are a helpful AI assistant guiding a user through the process of creating a website. The user has requested: "{message}"
     Provide a friendly and informative response to the user, explaining the next steps in creating their website.
     Your response should be conversational and encouraging, similar to how Vercel's v0 AI would interact.
+    Focus on UI/UX considerations and design elements that will enhance the user experience.
     """
     
     tsx_prompt = f"""
@@ -139,10 +149,16 @@ async def consult(request: ConsultationRequest):
         generated_content = await generate_tsx_preview(request.message, workspace_id)
         
         # Update shared knowledge based on the response
-        for key in ai.shared_knowledge.keys():
-            if key.lower() in generated_content["consultation"].lower():
-                ai.update_shared_knowledge(key, generated_content["consultation"])
-                await send_websocket_update(workspace_id, f"knowledge_update_{key}", ai.shared_knowledge[key])
+        consultation_text = generated_content["consultation"].lower()
+        for category, keywords in KNOWLEDGE_CATEGORIES.items():
+            # Check if any keyword from the category is in the consultation text
+            if any(keyword.lower() in consultation_text for keyword in keywords):
+                ai.update_shared_knowledge(category, generated_content["consultation"])
+                await send_websocket_update(workspace_id, f"knowledge_update_{category}", ai.shared_knowledge[category])
+        
+        # Also update UI Design knowledge if the message is about UI changes
+        if any(keyword in request.message.lower() for keyword in KNOWLEDGE_CATEGORIES["UI Design"]):
+            ai.update_shared_knowledge("UI Design", f"User requested UI update: {request.message}")
         
         await send_websocket_update(workspace_id, "preview_update", result.get("tsx_preview", generated_content["tsx_preview"]))
         await send_websocket_update(workspace_id, "progress_update", result.get("progress", 0))
