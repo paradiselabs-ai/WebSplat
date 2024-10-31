@@ -4,7 +4,6 @@ import React, { createContext, useState, useEffect } from 'react';
 import { Message } from '../utils/Message';
 import { AgentView } from '../utils/AgentView';
 import useWebSocket from '../utils/websocket';
-import { updateAgentView, addMessage } from '../utils/websplatUtils';
 import { Layout, DollarSign, Search, BarChart2, Cloud } from 'lucide-react';
 import axios from 'axios';
 
@@ -44,7 +43,9 @@ interface AppContextValue {
     setAutonomyLevel: (level: number) => void;
     toggleAutonomySlider: () => void;
     isAutonomySliderVisible: boolean;
-  }
+    workspaceId: string | null;
+    previewOpen: boolean;
+}
 
 const AppContext = createContext<AppContextValue | null>(null);
 
@@ -74,77 +75,45 @@ const AppProvider = ({ children }: AppContextProps) => {
     const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
     const [workspaceId, setWorkspaceId] = useState<string | null>(null);
     const [isAutonomySliderVisible, setIsAutonomySliderVisible] = useState<boolean>(false);
-    const [socket, setSocket] = useState<WebSocket | null>(null);
+    const [previewOpen, setPreviewOpen] = useState<boolean>(false);
     const [overallProgress, setOverallProgress] = useState<number>(0);
+    const [cursorPosition, setCursorPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+    const socket = useWebSocket(workspaceId, {
+      setGeneratedHtml,
+      setOverallProgress,
+      setProgressReport,
+      setAgentViews,
+      setMessages,
+      setIsTyping,
+      setCurrentAiMessage,
+    }, agentViews, messages);
 
     useEffect(() => {
-        if (workspaceId) {
-          const newSocket = new WebSocket(`ws://localhost:8000/ws/${workspaceId}`);
-          
-          newSocket.onopen = () => {
-            console.log('WebSocket connection established');
-          };
-    
-          newSocket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            handleWebSocketMessage(data);
-          };
-    
-          newSocket.onclose = () => {
-            console.log('WebSocket connection closed');
-          };
-    
-          setSocket(newSocket);
-    
-          return () => {
-            if (socket) {
-              socket.close();
-            }
-            newSocket.close();
-          };
-        }
-      }, [workspaceId, socket]);
-    
-      const handleWebSocketMessage = (data: any) => {
-        switch (data.type) {
-          case 'preview_update':
-            if (typeof data.content === 'string') {
-              setGeneratedHtml(data.content);
-            }
-            break;
-          case 'progress_update':
-            if (typeof data.content === 'number') {
-              setOverallProgress(data.content);
-              if (data.progress_details) {
-                setProgressReport(prev => prev + '\n' + data.progress_details);
-              }
-            }
-            break;
-          case 'knowledge_update_UI Design':
-          case 'knowledge_update_Monetization':
-          case 'knowledge_update_SEO':
-          case 'knowledge_update_Analytics':
-          case 'knowledge_update_Deployment':
-            const agentType = data.type.split('_')[2];
-            if (Array.isArray(data.content)) {
-              setAgentViews(updateAgentView(agentViews, agentType, data.content));
-            }
-            break;
-          case 'chat_message':
-            if (data.role && typeof data.content === 'string') {
-              setMessages(addMessage(messages, data.role, data.content, data.agent));
-              if (data.role === 'ai') {
-                setIsTyping(false);
-                setCurrentAiMessage('');
-              }
-            }
-            break;
-          default:
-            console.log('Unknown message type:', data.type);
-        }
-      };    
+        const handleMouseMove = (e: MouseEvent) => {
+          setCursorPosition({ x: e.clientX, y: e.clientY });
+        };
 
-      const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
+        window.addEventListener('mousemove', handleMouseMove);
+
+        return () => {
+          window.removeEventListener('mousemove', handleMouseMove);
+        };
+    }, []);
+
+    useEffect(() => {
+        const windowHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
+        const tolerance = 50;
+
+        if ((cursorPosition.x <= tolerance && cursorPosition.y >= windowHeight / 2 - tolerance && cursorPosition.y <= windowHeight / 2 + tolerance) || 
+            (cursorPosition.x <= tolerance && cursorPosition.y >= windowHeight - tolerance)) {
+          setSidebarOpen(true);
+        } else if (cursorPosition.x > 300 && sidebarOpen) {
+          setSidebarOpen(false);
+        }
+    }, [cursorPosition, sidebarOpen]);
+
+    const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (inputMessage.trim() === '') return;
 
@@ -179,25 +148,25 @@ const AppProvider = ({ children }: AppContextProps) => {
         } finally {
           setIsSending(false);
         }
-      };
+    };
     
-      const handleProjectNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleProjectNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setProjectName(e.target.value);
-      };
+    };
     
-      const handleProjectNameBlur = () => {
+    const handleProjectNameBlur = () => {
         setIsEditingProjectName(false);
-      };
+    };
     
-      const togglePreview = () => {
-        setSidebarOpen(!sidebarOpen);
-      };
+    const togglePreview = () => {
+        setPreviewOpen(!previewOpen);
+    };
     
-      const toggleAutonomySlider = () => {
+    const toggleAutonomySlider = () => {
         setIsAutonomySliderVisible(!isAutonomySliderVisible);
-      };
+    };
     
-      const requestProgressReport = async () => {
+    const requestProgressReport = async () => {
         try {
           const response = await axios.get('http://localhost:8000/progress_report', {
             params: { workspace_id: workspaceId }
@@ -207,9 +176,9 @@ const AppProvider = ({ children }: AppContextProps) => {
           console.error('Error fetching progress report:', error);
           setProgressReport('Error fetching progress report. Please try again.');
         }
-      };
+    };
     
-      const requestStrategyExplanation = async (strategyType: string) => {
+    const requestStrategyExplanation = async (strategyType: string) => {
         try {
           const response = await axios.post('http://localhost:8000/explain_strategy', {
             strategy_type: strategyType,
@@ -220,47 +189,49 @@ const AppProvider = ({ children }: AppContextProps) => {
           console.error('Error fetching strategy explanation:', error);
           setStrategyExplanation('Error fetching strategy explanation. Please try again.');
         }
-      };
+    };
 
-  return (
-    <AppContext.Provider
-      value={{
-        messages,
-        inputMessage,
-        autonomyLevel,
-        previewMode,
-        activeView,
-        generatedHtml,
-        isFirstInteraction,
-        isTyping,
-        currentAiMessage,
-        agentViews,
-        progressReport,
-        strategyExplanation,
-        isAutonomySliderVisible,
-        toggleAutonomySlider,
-        handleSendMessage,
-        setInputMessage,
-        togglePreview,
-        setPreviewMode,
-        setActiveView: (view: string) => setActiveView(view),
-        requestProgressReport,
-        requestStrategyExplanation,
-        isSending,
-        projectName,
-        isEditingProjectName,
-        isHoveringProjectName,
-        setIsEditingProjectName,
-        setIsHoveringProjectName,
-        handleProjectNameChange,
-        handleProjectNameBlur,
-        sidebarOpen,
-        setAutonomyLevel,
-      }}
-    >
-      {children}
-    </AppContext.Provider>
-  );
+    return (
+        <AppContext.Provider
+          value={{
+            messages,
+            inputMessage,
+            autonomyLevel,
+            previewMode,
+            activeView,
+            generatedHtml,
+            isFirstInteraction,
+            isTyping,
+            currentAiMessage,
+            agentViews,
+            progressReport,
+            strategyExplanation,
+            isAutonomySliderVisible,
+            toggleAutonomySlider,
+            handleSendMessage,
+            setInputMessage,
+            togglePreview,
+            setPreviewMode,
+            setActiveView,
+            requestProgressReport,
+            requestStrategyExplanation,
+            isSending,
+            projectName,
+            isEditingProjectName,
+            isHoveringProjectName,
+            setIsEditingProjectName,
+            setIsHoveringProjectName,
+            handleProjectNameChange,
+            handleProjectNameBlur,
+            sidebarOpen,
+            setAutonomyLevel,
+            workspaceId,
+            previewOpen,
+          }}
+        >
+          {children}
+        </AppContext.Provider>
+    );
 };
 
 export { AppProvider, AppContext };

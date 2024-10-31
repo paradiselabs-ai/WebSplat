@@ -2,6 +2,7 @@ import React from 'react';
 import Header from './Header';
 import Sidebar from './Sidebar';
 import MainContent from './MainContent';
+import PreviewPanel from './PreviewPanel';
 import { useContext } from 'react';
 import { AppContext } from '../context/AppContext';
 import MinimalAutonomyControl from './MinimalAutonomyControl';
@@ -45,6 +46,8 @@ const App = () => {
       sidebarOpen,
       setAutonomyLevel,
       toggleAutonomySlider,
+      workspaceId,
+      previewOpen,
     } = context;
   
     return (
@@ -90,6 +93,15 @@ const App = () => {
             requestProgressReport={requestProgressReport}
             requestStrategyExplanation={requestStrategyExplanation}
             isSending={isSending}
+            workspaceId={workspaceId}
+          />
+          <PreviewPanel
+            previewOpen={previewOpen}
+            previewMode={previewMode}
+            generatedHtml={generatedHtml}
+            workspaceId={workspaceId}
+            togglePreview={togglePreview}
+            setPreviewMode={setPreviewMode}
           />
         </div>
         {isAutonomySliderVisible && (

@@ -4,8 +4,7 @@ import { ScrollArea } from "./ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Message } from '../utils/Message';
 import TypewriterText from './TypewriterText';
-import LivePreview from './LivePreview';
-import { ArrowUp } from 'lucide-react'; // Import the ArrowUp icon
+import { ArrowUp, PanelRightOpen } from 'lucide-react';
 
 interface MainContentProps {
   messages: Message[];
@@ -27,16 +26,15 @@ interface MainContentProps {
   setActiveView: (view: string) => void;
   requestProgressReport: () => void;
   requestStrategyExplanation: (strategyType: string) => void;
-  isSending: boolean; // Define the isSending prop
+  isSending: boolean;
+  workspaceId: string | null;
 }
 
 const MainContent: React.FC<MainContentProps> = ({
   messages,
   inputMessage,
   autonomyLevel,
-  previewMode,
   activeView,
-  generatedHtml,
   isFirstInteraction,
   isTyping,
   currentAiMessage,
@@ -46,7 +44,6 @@ const MainContent: React.FC<MainContentProps> = ({
   handleSendMessage,
   setInputMessage,
   togglePreview,
-  setPreviewMode,
   setActiveView,
   requestProgressReport,
   requestStrategyExplanation,
@@ -62,6 +59,7 @@ const MainContent: React.FC<MainContentProps> = ({
           ))}
           <TabsTrigger value="progress">Progress</TabsTrigger>
         </TabsList>
+
         <TabsContent value="chat" className="flex-1 flex flex-col">
           <div className="flex-1 flex justify-center items-center">
             <div className="w-3/5 max-w-3xl">
@@ -113,13 +111,14 @@ const MainContent: React.FC<MainContentProps> = ({
             </div>
           </div>
         </TabsContent>
+
         {agentViews.map((view, index) => (
           <TabsContent key={index} value={view.name} className="flex-1 p-4 overflow-auto">
             <h2 className="text-xl font-bold mb-4">{view.name}</h2>
             <ul className="space-y-2">
-            {view.content.map((item: string, i: string) => (
-              <li key={i} className="bg-[#31312E] p-2 rounded">{item}</li>
-            ))}
+              {view.content.map((item: string, i: number) => (
+                <li key={i} className="bg-[#31312E] p-2 rounded">{item}</li>
+              ))}
             </ul>
             <Button onClick={() => requestStrategyExplanation(view.name)} className="mt-4">
               Explain {view.name} Strategy
@@ -132,8 +131,19 @@ const MainContent: React.FC<MainContentProps> = ({
             )}
           </TabsContent>
         ))}
+
         <TabsContent value="progress" className="flex-1 p-4 overflow-auto">
           <h2 className="text-xl font-bold mb-4">Progress Report</h2>
+          <div className="mb-4">
+            <h3 className="text-lg font-semibold mb-2">Overall Progress</h3>
+            <div className="w-full bg-[#31312E] rounded-full h-4">
+              <div
+                className="bg-[#A3512B] h-4 rounded-full transition-all duration-300"
+                style={{ width: `${autonomyLevel}%` }}
+              ></div>
+            </div>
+            <p className="mt-2 text-right">{autonomyLevel}%</p>
+          </div>
           <Button onClick={requestProgressReport} className="mb-4">
             Get Progress Report
           </Button>
@@ -144,6 +154,16 @@ const MainContent: React.FC<MainContentProps> = ({
           )}
         </TabsContent>
       </Tabs>
+
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={togglePreview}
+        className="fixed top-1/2 right-0 transform -translate-y-1/2 z-40 bg-[#2A2A2A] hover:bg-[#3A3A3A] rounded-l-md"
+        title="Toggle Preview"
+      >
+        <PanelRightOpen className="h-5 w-5" />
+      </Button>
     </main>
   );
 };
