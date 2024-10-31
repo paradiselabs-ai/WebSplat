@@ -1,55 +1,76 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface TypewriterTextProps {
   text: string;
 }
 
-const TypewriterText: React.FC<TypewriterTextProps> = ({ text = '' }) => {
+const TypewriterText: React.FC<TypewriterTextProps> = ({ text = 'Got a website concept? I\'m here to assist.' }) => {
   const [displayText, setDisplayText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
-  const textToType = "Got a website concept? I'm here to assist.";
+  let timeoutId: NodeJS.Timeout;
 
   useEffect(() => {
-    let mounted = true;
-    setDisplayText('');
     let currentIndex = 0;
 
     const typeNextCharacter = () => {
-      if (!mounted) return;
-      
-      if (currentIndex < textToType.length) {
-        setDisplayText(textToType.slice(0, currentIndex + 1));
+      if (currentIndex < text.length) {
+        setDisplayText(text.slice(0, currentIndex + 1));
         currentIndex++;
-        intervalRef.current = setTimeout(typeNextCharacter, 31); 
+        timeoutId = setTimeout(typeNextCharacter, 25);
       } else {
-        // Hide cursor when typing is complete
-        setShowCursor(false);
+        timeoutId = setTimeout(() => setShowCursor(false), 800);
       }
     };
 
-    typeNextCharacter();
+    timeoutId = setTimeout(typeNextCharacter, 400); // Delay start for fade-in effect
 
-    return () => {
-      mounted = false;
-      if (intervalRef.current) {
-        clearTimeout(intervalRef.current);
-      }
-    };
-  }, []);
+    return () => clearTimeout(timeoutId);
+  }, [text]);
 
   return (
-    <p className="text-[#AAAAAA] text-lg">
-      {displayText}
-      {showCursor && (
-        <span 
-          className="inline-block w-1.5 h-4 ml-0.5 bg-white animate-pulse"
-          style={{ verticalAlign: 'middle' }}
-        />
-      )}
-    </p>
+    <div className="relative opacity-0 animate-fade-in py-1">
+      <div className="relative transition-transform duration-300 ease-out">
+        <p className="relative text-2xl font-light tracking-wider bg-gradient-to-r from-white via-[#CCCCCC] to-[#888888] text-transparent bg-clip-text animate-gradient leading-relaxed">
+          {displayText}
+          {showCursor && (
+            <span className="inline-block w-[2px] h-6 ml-[2px] bg-white animate-cursor-blink" style={{ verticalAlign: 'middle' }} />
+          )}
+        </p>
+      </div>
+      <style jsx>{`
+        @keyframes gradientShift {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        @keyframes cursorBlink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+        @keyframes fadeIn {
+          from { 
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to { 
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        .animate-fade-in {
+          animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+        }
+        .animate-gradient {
+          background-size: 200% auto;
+          animation: gradientShift 8s ease infinite;
+        }
+        .animate-cursor-blink {
+          animation: cursorBlink 1.2s ease-in-out infinite;
+        }
+      `}</style>
+    </div>
   );
 };
 
