@@ -5,6 +5,8 @@ import { Message } from '../utils/Message';
 import { AgentView } from '../utils/AgentView';
 import useWebSocket from '../utils/websocket';
 import { updateAgentView, addMessage } from '../utils/websplatUtils';
+import { Layout, DollarSign, Search, BarChart2, Cloud } from 'lucide-react';
+import axios from 'axios';
 
 interface AppContextProps { 
   children: React.ReactNode;
@@ -56,7 +58,13 @@ const AppProvider = ({ children }: AppContextProps) => {
     const [isFirstInteraction, setIsFirstInteraction] = useState<boolean>(true);
     const [isTyping, setIsTyping] = useState<boolean>(false);
     const [currentAiMessage, setCurrentAiMessage] = useState<string>('');
-    const [agentViews, setAgentViews] = useState<AgentView[]>([]);
+    const [agentViews, setAgentViews] = useState<AgentView[]>([
+      { name: 'UI Design', icon: Layout, content: [] },
+      { name: 'Monetization', icon: DollarSign, content: [] },
+      { name: 'SEO', icon: Search, content: [] },
+      { name: 'Analytics', icon: BarChart2, content: [] },
+      { name: 'Deployment', icon: Cloud, content: [] },
+    ]);
     const [progressReport, setProgressReport] = useState<string>('');
     const [strategyExplanation, setStrategyExplanation] = useState<string>('');
     const [isSending, setIsSending] = useState<boolean>(false);
@@ -67,6 +75,7 @@ const AppProvider = ({ children }: AppContextProps) => {
     const [workspaceId, setWorkspaceId] = useState<string | null>(null);
     const [isAutonomySliderVisible, setIsAutonomySliderVisible] = useState<boolean>(false);
     const [socket, setSocket] = useState<WebSocket | null>(null);
+    const [overallProgress, setOverallProgress] = useState<number>(0);
 
     useEffect(() => {
         if (workspaceId) {
@@ -105,7 +114,10 @@ const AppProvider = ({ children }: AppContextProps) => {
             break;
           case 'progress_update':
             if (typeof data.content === 'number') {
-              // Update progress report here
+              setOverallProgress(data.content);
+              if (data.progress_details) {
+                setProgressReport(prev => prev + '\n' + data.progress_details);
+              }
             }
             break;
           case 'knowledge_update_UI Design':
@@ -121,6 +133,10 @@ const AppProvider = ({ children }: AppContextProps) => {
           case 'chat_message':
             if (data.role && typeof data.content === 'string') {
               setMessages(addMessage(messages, data.role, data.content, data.agent));
+              if (data.role === 'ai') {
+                setIsTyping(false);
+                setCurrentAiMessage('');
+              }
             }
             break;
           default:
@@ -129,7 +145,40 @@ const AppProvider = ({ children }: AppContextProps) => {
       };    
 
       const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
-        // Implement send message logic here
+        e.preventDefault();
+        if (inputMessage.trim() === '') return;
+
+        setIsSending(true);
+        setMessages(prev => [...prev, { role: 'user', content: inputMessage }]);
+        
+        if (isFirstInteraction) {
+          setIsFirstInteraction(false);
+        }
+
+        try {
+          const response = await axios.post('http://localhost:8000/consult', {
+            message: inputMessage,
+            autonomy_level: autonomyLevel,
+            workspace_id: workspaceId
+          });
+
+          if (response.data.workspace_id) {
+            setWorkspaceId(response.data.workspace_id);
+          }
+
+          setInputMessage('');
+          setIsTyping(true);
+          setCurrentAiMessage('');
+
+        } catch (error) {
+          console.error('Error sending message:', error);
+          setMessages(prev => [...prev, {
+            role: 'ai',
+            content: 'Sorry, there was an error processing your request. Please try again.'
+          }]);
+        } finally {
+          setIsSending(false);
+        }
       };
     
       const handleProjectNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -149,11 +198,28 @@ const AppProvider = ({ children }: AppContextProps) => {
       };
     
       const requestProgressReport = async () => {
-        // Implement request progress report logic here
+        try {
+          const response = await axios.get('http://localhost:8000/progress_report', {
+            params: { workspace_id: workspaceId }
+          });
+          setProgressReport(response.data.report);
+        } catch (error) {
+          console.error('Error fetching progress report:', error);
+          setProgressReport('Error fetching progress report. Please try again.');
+        }
       };
     
       const requestStrategyExplanation = async (strategyType: string) => {
-        // Implement request strategy explanation logic here
+        try {
+          const response = await axios.post('http://localhost:8000/explain_strategy', {
+            strategy_type: strategyType,
+            workspace_id: workspaceId
+          });
+          setStrategyExplanation(response.data.explanation);
+        } catch (error) {
+          console.error('Error fetching strategy explanation:', error);
+          setStrategyExplanation('Error fetching strategy explanation. Please try again.');
+        }
       };
 
   return (
