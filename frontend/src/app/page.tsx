@@ -1,6 +1,8 @@
 import { Metadata } from 'next';
-import WebSplatInterface from '../components/WebSplatInterface';
-import ErrorBoundary from '../components/ErrorBoundary'; // You'd need to create this component
+import App from '../components/App';
+import ClientApp from '../components/ClientApp';
+import ErrorBoundary from '../components/ErrorBoundary';
+import { AppProvider } from '../context/AppContext';
 
 export const metadata: Metadata = {
   title: 'WebSplat - AI-Powered Web Development',
@@ -11,7 +13,7 @@ export default function Home() {
   return (
     <ErrorBoundary>
       <main className="min-h-screen">
-        <WebSplatInterface />
+        <ClientApp />
       </main>
     </ErrorBoundary>
   );
