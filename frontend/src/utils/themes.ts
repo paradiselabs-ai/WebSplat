@@ -26,6 +26,7 @@ export const darkTheme = {
     accentPrimary: '#4A4A4A',
     accentSecondary: '#808080',
     accentHighlight: '#9A9A9A',
+    logoAnimation: '#FB9B54',  // Added for WebSplat logo hover effect
     
     // Hover States
     hoverBackground: '#3A3A3A',
@@ -74,6 +75,7 @@ export const lightTheme = {
     accentPrimary: '#C9C9C9',
     accentSecondary: '#A9A9A9',
     accentHighlight: '#969696',
+    logoAnimation: '#00B4B5',  // Added for WebSplat logo hover effect
     
     // Hover States
     hoverBackground: '#D9D9D9',

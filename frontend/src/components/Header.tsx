@@ -4,9 +4,10 @@ import { Input } from "./ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Settings, Sliders, Edit2 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import SettingsMenu from './SettingsMenu';  // Fixed import to use default import
+import SettingsMenu from './SettingsMenu';
 import { AppContext } from '../context/AppContext';
 import { AgentView } from '../utils/AgentView';
+import styled from 'styled-components';
 
 interface HeaderProps {
   isFirstInteraction: boolean;
@@ -22,6 +23,41 @@ interface HeaderProps {
   activeView: string;
   setActiveView: (view: string) => void;
 }
+
+const AnimatedLogo = styled.button`
+  margin: 0;
+  height: auto;
+  background: transparent;
+  padding: 0;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  position: relative;
+
+  .actual-text {
+    display: inline-block;
+    font-family: inherit;
+    color: var(--header-text);
+  }
+
+  .hover-text {
+    position: absolute;
+    box-sizing: border-box;
+    content: attr(data-text);
+    color: var(--logoAnimation);
+    width: 0%;
+    inset: 0;
+    overflow: hidden;
+    transition: 0.5s;
+    font-family: inherit;
+  }
+
+  &:hover .hover-text {
+    width: 100%;
+    filter: drop-shadow(0 0 23px var(--logoAnimation))
+  }
+`;
 
 const Header: React.FC<HeaderProps> = ({
   isFirstInteraction,
@@ -46,7 +82,10 @@ const Header: React.FC<HeaderProps> = ({
     <div className="header-container">
       <header className="top-header h-14 flex items-center justify-between px-4 z-10">
         <div className="flex items-center space-x-4">
-          <span className="text-sm font-semibold text-[var(--header-text)]">WebSplat</span>
+          <AnimatedLogo className="button text-[var(--header-text)]" data-text="WebSplat">
+            <span className="actual-text">WebSplat</span>
+            <span aria-hidden="true" className="hover-text">WebSplat</span>
+          </AnimatedLogo>
         </div>
         <div className="flex-1 flex justify-center items-center">
           {!isFirstInteraction && (
