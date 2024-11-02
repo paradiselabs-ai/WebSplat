@@ -91,6 +91,12 @@ Reusable UI components:
 - `input.tsx`: Form input component
 - `scroll-area.tsx`: Custom scrollable container
 - `tabs.tsx`: Tab navigation component
+- `Loader.tsx`: Loading indicator component
+  - Animated meteor-style loader
+  - Theme-aware styling
+  - Interactive hover effects
+  - Supports thinking/idle states
+- `Switch.tsx`: Toggle switch component
 
 ### `/src/context`
 Application state management:
@@ -105,6 +111,8 @@ Application state management:
   - Light/dark theme switching
   - Theme variable management
   - Dynamic theme application
+  - CSS variable injection
+  - Theme persistence
 
 ### `/src/utils`
 Utility functions and type definitions:
@@ -116,6 +124,10 @@ Utility functions and type definitions:
 - `ConsultationAgent.ts`: AI consultation agent logic
 - `Message.ts`: Message type definitions
 - `themes.ts`: Theme definitions and configuration
+  - Dark and light theme presets
+  - Theme type definitions
+  - Color variables for UI components
+  - Component-specific theme variables (loader, buttons, etc.)
 - `webSearch.ts`: Web search functionality
 - `websocket.ts`: WebSocket connection management
 - `websplatUtils.ts`: General utility functions
@@ -137,7 +149,8 @@ page.tsx
 ```
 ClientApp.tsx
 ├── ThemeContext.tsx
-│   └── themes.ts
+│   ├── themes.ts
+│   └── colors.ts
 └── AppContext.tsx
     ├── Message.ts
     ├── AgentView.ts
@@ -172,6 +185,7 @@ MainContent.tsx
 ├── ui/button.tsx
 ├── ui/scroll-area.tsx
 ├── ui/tabs.tsx
+├── ui/Loader.tsx
 ├── Message.ts
 ├── TypewriterText.tsx
 ├── AppContext.tsx
@@ -192,6 +206,17 @@ PreviewPanel.tsx
 ```
 ThemeContext.tsx
 ├── themes.ts
+│   ├── darkTheme
+│   │   ├── Main UI Colors
+│   │   ├── Text Colors
+│   │   ├── Interactive Elements
+│   │   ├── Input Elements
+│   │   ├── Accent Colors
+│   │   ├── Hover States
+│   │   ├── Scroll Colors
+│   │   ├── Border Colors
+│   │   └── Loader Colors
+│   └── lightTheme
 └── colors.ts
 ```
 
@@ -219,6 +244,13 @@ LivePreview.tsx
 └── AppContext.tsx
 ```
 
+#### Loader.tsx
+```
+Loader.tsx
+├── ThemeContext.tsx
+└── themes.ts
+```
+
 ### Shared Dependencies
 Most components share these common dependencies:
 - `ThemeContext.tsx` for theme access
@@ -240,6 +272,7 @@ Most components share these common dependencies:
 2. Theme update in ThemeContext.tsx
 3. Theme variable updates from themes.ts
 4. CSS variable application across all components
+5. Component-specific theme updates (e.g., Loader colors)
 
 ### Preview Update Flow
 1. Content changes in MainContent.tsx
@@ -270,6 +303,7 @@ ThemeContext.tsx (Theme Provider)
 ├── App.tsx (Root theme application)
 ├── MainContent.tsx (Content theming)
 ├── TypewriterText.tsx (Text theming)
+├── Loader.tsx (Component-specific theming)
 └── All UI components (Component theming)
 ```
 

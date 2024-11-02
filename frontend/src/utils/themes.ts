@@ -38,6 +38,12 @@ export const darkTheme = {
     // Border Colors
     borderPrimary: '#4A4A4A',
     borderSecondary: '#757575',
+
+    // Loader Colors
+    loaderGradientStart: 'rgba(255, 255, 255, 0.6)',
+    loaderGradientEnd: 'rgba(0, 0, 0, 0.6)',
+    loaderGlowPrimary: 'rgba(255, 255, 255, 0.8)',
+    loaderGlowSecondary: '#FB9B54',
 };
 
 export const lightTheme = {
@@ -80,6 +86,12 @@ export const lightTheme = {
     // Border Colors
     borderPrimary: '#C9C9C9',
     borderSecondary: '#A9A9A9',
+
+    // Loader Colors
+    loaderGradientStart: 'rgba(255, 255, 255, 0.8)',
+    loaderGradientEnd: 'rgba(200, 200, 200, 0.6)',
+    loaderGlowPrimary: 'rgba(255, 255, 255, 0.9)',
+    loaderGlowSecondary: '#FB9B54',
 };
 
 export type Theme = typeof darkTheme;

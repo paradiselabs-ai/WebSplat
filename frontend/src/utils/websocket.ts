@@ -36,6 +36,7 @@ const useWebSocket = (
       
       newSocket.onopen = () => {
         console.log('WebSocket connection established');
+        handlers.setIsTyping(true); // Set typing to true when connection is established
       };
 
       newSocket.onmessage = (event) => {
@@ -45,10 +46,12 @@ const useWebSocket = (
 
       newSocket.onclose = () => {
         console.log('WebSocket connection closed');
+        handlers.setIsTyping(false); // Set typing to false when connection is closed
       };
 
       newSocket.onerror = (error) => {
         console.error('WebSocket error:', error);
+        handlers.setIsTyping(false); // Set typing to false on error
       };
 
       setSocket(newSocket);
@@ -107,8 +110,17 @@ const useWebSocket = (
 
       case 'chat_message':
         if (data.role && typeof data.content === 'string') {
-          setMessages(addMessage(messages, data.role, data.content, data.agent));
           if (data.role === 'ai') {
+            if (data.content === '') {
+              // Keep typing true but clear current message when empty content received
+              setCurrentAiMessage('');
+            } else {
+              // Update current message and keep typing true while receiving content
+              setCurrentAiMessage(data.content);
+            }
+          } else {
+            // When the full message is received, add it to messages and set typing false
+            setMessages(addMessage(messages, data.role, data.content, data.agent));
             setIsTyping(false);
             setCurrentAiMessage('');
           }

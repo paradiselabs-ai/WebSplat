@@ -1,6 +1,7 @@
 import { Button } from "./ui/button";
-import { X, Moon, Sun } from "lucide-react";
+import { X } from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
+import Switch from "./ui/Switch";
 
 interface SettingsMenuProps {
   isOpen: boolean;
@@ -27,17 +28,11 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
       </div>
       
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-[var(--header-text)]">Theme</span>
-          <div className="flex items-center space-x-2">
-            <Button
-              size="icon"
-              onClick={toggleTheme}
-              className="theme-icon text-[var(--header-text)] hover:text-[var(--header-hover)] hover:bg-[var(--button-hover)]"
-            >
-              {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
-          </div>
+        <div className="flex items-center justify-between py-2">
+          <span className="text-sm text-[var(--header-text)]">
+            {isDark ? 'Dark' : 'Light'} Theme
+          </span>
+          <Switch checked={isDark} onChange={toggleTheme} />
         </div>
       </div>
     </div>

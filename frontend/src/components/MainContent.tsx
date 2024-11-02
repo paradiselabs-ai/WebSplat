@@ -4,6 +4,7 @@ import { ScrollArea } from "./ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Message } from '../utils/Message';
 import TypewriterText from './TypewriterText';
+import Loader from './ui/Loader';
 import { ArrowUp, PanelRightOpen } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 
@@ -57,6 +58,9 @@ const MainContent: React.FC<MainContentProps> = ({
   const messageBgColor = themeType === 'dark' ? 'bg-[#4A4A4A]' : 'bg-[#F8FAFC]';
   const userMessageBgColor = themeType === 'dark' ? 'bg-[#808080]' : 'bg-[#E2E8F0]';
 
+  const lastMessage = messages[messages.length - 1];
+  const showLoaderAfterUserMessage = lastMessage?.role === 'user' && isTyping;
+
   return (
     <main className="flex-1 flex flex-col overflow-hidden bg-[var(--chat-area)] text-[var(--text)] transition-all duration-300 ease-in-out">
       <Tabs value={activeView} onValueChange={setActiveView} className="flex-1 flex flex-col">
@@ -67,7 +71,7 @@ const MainContent: React.FC<MainContentProps> = ({
                 {messages.map((message: Message, index: number) => (
                   <div 
                     key={index} 
-                    className={`mb-4 ${
+                    className={`mb-4 relative ${
                       message.role === 'ai' 
                         ? `${messageBgColor} text-[var(--text)] p-3 rounded-2xl` 
                         : `${userMessageBgColor} text-[var(--text)] p-3 rounded-2xl`
@@ -76,11 +80,17 @@ const MainContent: React.FC<MainContentProps> = ({
                     <p className={message.role === 'ai' ? 'font-tiempos text-base' : 'font-styrene text-[15px]'}>
                       {message.content}
                     </p>
+                    {index === messages.length - 1 && message.role === 'ai' && !isTyping && (
+                      <Loader isThinking={false} />
+                    )}
+                    {index === messages.length - 1 && message.role === 'user' && isTyping && (
+                      <Loader isThinking={true} />
+                    )}
                   </div>
                 ))}
-                {isTyping && (
-                  <div className={`mb-4 ${messageBgColor} text-[var(--text)] p-3 rounded-2xl`}>
-                    <p className="font-tiempos text-base">{currentAiMessage}</p>
+                {messages.length === 0 && !isTyping && (
+                  <div className="relative">
+                    <Loader isThinking={false} />
                   </div>
                 )}
               </ScrollArea>

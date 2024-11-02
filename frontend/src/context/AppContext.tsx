@@ -121,15 +121,24 @@ const AppProvider: React.FC<AppContextProps> = ({ children }) => {
     if (inputMessage.trim() === '') return;
 
     setIsSending(true);
+    setIsTyping(true); // Set typing to true immediately
+    setCurrentAiMessage(''); // Clear any previous AI message
     setMessages(prev => [...prev, { role: 'user', content: inputMessage }]);
     
     if (isFirstInteraction) {
       setIsFirstInteraction(false);
     }
 
+    // Store the input message and clear the input field immediately
+    const messageToSend = inputMessage;
+    setInputMessage('');
+
     try {
+      // Add artificial delay to ensure loader is visible
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
       const response = await axios.post('http://localhost:8000/consult', {
-        message: inputMessage,
+        message: messageToSend,
         autonomy_level: autonomyLevel,
         workspace_id: workspaceId
       });
@@ -138,12 +147,11 @@ const AppProvider: React.FC<AppContextProps> = ({ children }) => {
         setWorkspaceId(response.data.workspace_id);
       }
 
-      setInputMessage('');
-      setIsTyping(true);
-      setCurrentAiMessage('');
-
     } catch (error) {
       console.error('Error sending message:', error);
+      // Add artificial delay before showing error
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setIsTyping(false); // Set typing to false before adding error message
       setMessages(prev => [...prev, {
         role: 'ai',
         content: 'Sorry, there was an error processing your request. Please try again.'
