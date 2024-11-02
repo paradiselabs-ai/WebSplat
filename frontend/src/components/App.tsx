@@ -51,7 +51,7 @@ const App = () => {
     } = context;
   
     return (
-      <div className="h-screen flex flex-col bg-[#2C2B28] text-[#888888]">
+      <div className="h-screen flex flex-col bg-[#212121]">
         <Header
           isFirstInteraction={isFirstInteraction}
           projectName={projectName}
@@ -62,6 +62,9 @@ const App = () => {
           setIsHoveringProjectName={setIsHoveringProjectName}
           handleProjectNameChange={handleProjectNameChange}
           handleProjectNameBlur={handleProjectNameBlur}
+          agentViews={agentViews}
+          activeView={activeView}
+          setActiveView={setActiveView}
         />
         <div className="flex-1 flex overflow-hidden">
           <Sidebar
@@ -69,7 +72,7 @@ const App = () => {
             agentViews={agentViews}
             activeView={activeView}
             autonomyLevel={autonomyLevel}
-            setActiveView={setActiveView} 
+            setActiveView={setActiveView}
             setAutonomyLevel={setAutonomyLevel}
           />
           <MainContent
@@ -105,15 +108,16 @@ const App = () => {
           />
         </div>
         {isAutonomySliderVisible && (
-        <div className="fixed top-14 right-4 bg-[#2A2A2A] p-4 rounded-lg shadow-lg z-50">
-          <h3 className="text-lg font-semibold mb-2">AI Autonomy Level</h3>
-          <MinimalAutonomyControl
-            value={autonomyLevel}
-            onChange={setAutonomyLevel}
-          />
-        </div>
-      )}
-    </div>
-  );
+          <div className="fixed top-14 right-4 bg-[#171717] border border-[#4A4A4A] p-4 rounded-lg shadow-lg z-50">
+            <h3 className="text-lg font-semibold mb-2 text-[#676767]">AI Autonomy Level</h3>
+            <MinimalAutonomyControl
+              value={autonomyLevel}
+              onChange={setAutonomyLevel}
+            />
+          </div>
+        )}
+      </div>
+    );
 };
+
 export default App;

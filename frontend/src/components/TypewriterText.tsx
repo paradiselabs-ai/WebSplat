@@ -1,41 +1,71 @@
 'use client';
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useTheme } from '../context/ThemeContext';
 
 interface TypewriterTextProps {
-  text: string;
+  text?: string;
+  className?: string;
 }
 
-const TypewriterText: React.FC<TypewriterTextProps> = ({ text = 'Got a website concept? I\'m here to assist.' }) => {
+const TypewriterText = ({ 
+  text = 'Got a website concept? I\'m here to assist.',
+  className = ''
+}: TypewriterTextProps) => {
   const [displayText, setDisplayText] = useState('');
   const [showCursor, setShowCursor] = useState(true);
-  let timeoutId: NodeJS.Timeout;
+  const [isVisible, setIsVisible] = useState(false);
+  const { themeType } = useTheme();
+
+  const typeNextCharacter = useCallback((currentIndex: number) => {
+    if (currentIndex < text.length) {
+      setDisplayText(text.slice(0, currentIndex + 1));
+      return true;
+    }
+    return false;
+  }, [text]);
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
     let currentIndex = 0;
 
-    const typeNextCharacter = () => {
-      if (currentIndex < text.length) {
-        setDisplayText(text.slice(0, currentIndex + 1));
+    const animate = () => {
+      if (typeNextCharacter(currentIndex)) {
         currentIndex++;
-        timeoutId = setTimeout(typeNextCharacter, 25);
+        timeoutId = setTimeout(animate, Math.random() * 30 + 20); // Varying speed
       } else {
         timeoutId = setTimeout(() => setShowCursor(false), 800);
       }
     };
 
-    timeoutId = setTimeout(typeNextCharacter, 400); // Delay start for fade-in effect
+    // Initial visibility transition
+    setIsVisible(true);
+    
+    // Start typing after initial fade-in
+    timeoutId = setTimeout(animate, 400);
 
     return () => clearTimeout(timeoutId);
-  }, [text]);
+  }, [text, typeNextCharacter]);
+
+  const gradientColors = themeType === 'dark' 
+    ? 'from-white via-orange-100 to-orange-500'
+    : 'from-blue-800 via-blue-900 to-[#00B4B5]' /* [#00B4B5] */
 
   return (
-    <div className="relative opacity-0 animate-fade-in py-1">
-      <div className="relative transition-transform duration-300 ease-out">
-        <p className="relative text-2xl font-light tracking-wider bg-gradient-to-r from-white via-[#CCCCCC] to-[#888888] text-transparent bg-clip-text animate-gradient leading-relaxed">
-          {displayText}
+    <div className={`transform transition-all duration-1000 ease-out ${
+      isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+    } ${className}`}>
+      <div className="relative">
+        <p className="font-serif text-2l md:text-2xl tracking-wide leading-relaxed">
+          <span className={`bg-gradient-to-r ${gradientColors} bg-clip-text text-transparent animate-gradient`}>
+            {displayText}
+          </span>
           {showCursor && (
-            <span className="inline-block w-[2px] h-6 ml-[2px] bg-white animate-cursor-blink" style={{ verticalAlign: 'middle' }} />
+            <span 
+              className={`inline-block w-0.5 h-8 md:h-10 ml-1 animate-cursor-blink ${
+                themeType === 'dark' ? 'bg-orange-300' : 'bg-gray-700'
+              }`}
+              style={{ verticalAlign: 'middle' }}
+            />
           )}
         </p>
       </div>
@@ -45,29 +75,20 @@ const TypewriterText: React.FC<TypewriterTextProps> = ({ text = 'Got a website c
           50% { background-position: 100% 50%; }
           100% { background-position: 0% 50%; }
         }
+
         @keyframes cursorBlink {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0; }
+          0%, 100% { opacity: 1; transform: scaleY(1); }
+          50% { opacity: 0.4; transform: scaleY(0.85); }
         }
-        @keyframes fadeIn {
-          from { 
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to { 
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fade-in {
-          animation: fadeIn 0.8s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-        }
+
         .animate-gradient {
           background-size: 200% auto;
-          animation: gradientShift 8s ease infinite;
+          animation: gradientShift 4s ease infinite;
         }
+
         .animate-cursor-blink {
-          animation: cursorBlink 1.2s ease-in-out infinite;
+          animation: cursorBlink 0.8s ease-in-out infinite;
+          transform-origin: bottom;
         }
       `}</style>
     </div>

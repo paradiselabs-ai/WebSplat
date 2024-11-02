@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Message } from '../utils/Message';
 import TypewriterText from './TypewriterText';
 import { ArrowUp, PanelRightOpen } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
 
 interface MainContentProps {
   messages: Message[];
@@ -49,30 +50,36 @@ const MainContent: React.FC<MainContentProps> = ({
   requestStrategyExplanation,
   isSending,
 }) => {
-  return (
-    <main className={`flex-1 flex flex-col overflow-hidden bg-[#2C2B28] text-[#999999] transition-all duration-300 ease-in-out`}>
-      <Tabs value={activeView} onValueChange={setActiveView} className="flex-1 flex flex-col">
-        <TabsList className="justify-start px-4 py-2 border-b border-[#333333]">
-          <TabsTrigger value="chat">Chat</TabsTrigger>
-          {agentViews.map((view, index) => (
-            <TabsTrigger key={index} value={view.name}>{view.name}</TabsTrigger>
-          ))}
-          <TabsTrigger value="progress">Progress</TabsTrigger>
-        </TabsList>
+  const { themeType } = useTheme();
+  const inputBgColor = themeType === 'dark' ? 'bg-[#212121]' : 'bg-[#F5F5F5]';
+  const inputTextColor = themeType === 'dark' ? 'text-white' : 'text-[#1E293B]';
+  const inputPlaceholderColor = themeType === 'dark' ? 'placeholder-[#808080]' : 'placeholder-[#94A3B8]';
+  const messageBgColor = themeType === 'dark' ? 'bg-[#4A4A4A]' : 'bg-[#F8FAFC]';
+  const userMessageBgColor = themeType === 'dark' ? 'bg-[#808080]' : 'bg-[#E2E8F0]';
 
+  return (
+    <main className="flex-1 flex flex-col overflow-hidden bg-[var(--chat-area)] text-[var(--text)] transition-all duration-300 ease-in-out">
+      <Tabs value={activeView} onValueChange={setActiveView} className="flex-1 flex flex-col">
         <TabsContent value="chat" className="flex-1 flex flex-col">
           <div className="flex-1 flex justify-center items-center">
             <div className="w-3/5 max-w-3xl">
               <ScrollArea className={`h-[calc(100vh-10rem)] mt-4 ${isFirstInteraction ? 'hidden' : ''}`}>
                 {messages.map((message: Message, index: number) => (
-                  <div key={index} className={`mb-4 ${message.role === 'ai' ? 'bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl' : 'bg-[#21201C] text-[#E5E5E2] p-3 rounded-2xl'}`}>
+                  <div 
+                    key={index} 
+                    className={`mb-4 ${
+                      message.role === 'ai' 
+                        ? `${messageBgColor} text-[var(--text)] p-3 rounded-2xl` 
+                        : `${userMessageBgColor} text-[var(--text)] p-3 rounded-2xl`
+                    }`}
+                  >
                     <p className={message.role === 'ai' ? 'font-tiempos text-base' : 'font-styrene text-[15px]'}>
                       {message.content}
                     </p>
                   </div>
                 ))}
                 {isTyping && (
-                  <div className="mb-4 bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl">
+                  <div className={`mb-4 ${messageBgColor} text-[var(--text)] p-3 rounded-2xl`}>
                     <p className="font-tiempos text-base">{currentAiMessage}</p>
                   </div>
                 )}
@@ -85,7 +92,7 @@ const MainContent: React.FC<MainContentProps> = ({
                 }`}
               >
                 {isFirstInteraction && (
-                  <div className="text-center mb-4">
+                  <div className="text-center mb-4 text-[var(--text-secondary)]">
                     <TypewriterText text="Got a website concept? I'm here to assist." />
                   </div>
                 )}
@@ -94,13 +101,17 @@ const MainContent: React.FC<MainContentProps> = ({
                     <input
                       type="text"
                       placeholder={isFirstInteraction ? "Message Eden" : "Reply to Eden..."}
-                      className="w-full bg-[#31312E] text-[#E5E5E2] rounded-full pl-4 pr-12 py-2 focus:ring-2 focus:ring-[#444444] focus:border-transparent placeholder-[#A6A39A]"
+                      className={`w-full ${inputBgColor} ${inputTextColor} ${inputPlaceholderColor} rounded-full pl-4 pr-12 py-2 border-2 border-[var(--accent-highlight)] focus:outline-none focus:ring-0 focus:border-[var(--accent-highlight)]`}
                       value={inputMessage}
                       onChange={(e) => setInputMessage(e.target.value)}
                     />
                     <Button
                       type="submit"
-                      className={`absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#A3512B] text-white hover:bg-[#B5613B] transition-all duration-300 ${isSending ? 'animate-pulse' : ''} rounded-full w-8 h-8 flex items-center justify-center opacity-0 ${inputMessage.trim() !== '' ? 'opacity-100' : ''}`}
+                      className={`absolute right-1 top-1/2 transform -translate-y-1/2 ${inputBgColor} ${inputTextColor} hover:bg-[var(--button-hover)] transition-all duration-300 ${
+                        isSending ? 'animate-pulse' : ''
+                      } rounded-full w-8 h-8 flex items-center justify-center opacity-0 ${
+                        inputMessage.trim() !== '' ? 'opacity-100' : ''
+                      }`}
                       disabled={isSending || inputMessage.trim() === ''}
                     >
                       <ArrowUp className="h-4 w-4" />
@@ -113,42 +124,48 @@ const MainContent: React.FC<MainContentProps> = ({
         </TabsContent>
 
         {agentViews.map((view, index) => (
-          <TabsContent key={index} value={view.name} className="flex-1 p-4 overflow-auto">
-            <h2 className="text-xl font-bold mb-4">{view.name}</h2>
-            <ul className="space-y-2">
+          <TabsContent key={index} value={view.name} className="flex-1 p-6 overflow-auto">
+            <h2 className="text-xl font-bold mb-6 text-[var(--text-secondary)]">{view.name}</h2>
+            <ul className="space-y-4">
               {view.content.map((item: string, i: number) => (
-                <li key={i} className="bg-[#31312E] p-2 rounded">{item}</li>
+                <li key={i} className={`${messageBgColor} p-4 rounded-lg text-[var(--text)] shadow-sm`}>{item}</li>
               ))}
             </ul>
-            <Button onClick={() => requestStrategyExplanation(view.name)} className="mt-4">
+            <Button 
+              onClick={() => requestStrategyExplanation(view.name)} 
+              className={`mt-6 ${inputBgColor} hover:bg-[var(--button-hover)] text-[var(--text)]`}
+            >
               Explain {view.name} Strategy
             </Button>
             {strategyExplanation && (
-              <div className="mt-4 bg-[#31312E] p-3 rounded">
-                <h3 className="font-bold mb-2">{view.name} Strategy Explanation:</h3>
+              <div className={`mt-6 ${messageBgColor} p-4 rounded-lg text-[var(--text)] shadow-sm`}>
+                <h3 className="font-bold mb-3">{view.name} Strategy Explanation:</h3>
                 <p>{strategyExplanation}</p>
               </div>
             )}
           </TabsContent>
         ))}
 
-        <TabsContent value="progress" className="flex-1 p-4 overflow-auto">
-          <h2 className="text-xl font-bold mb-4">Progress Report</h2>
-          <div className="mb-4">
-            <h3 className="text-lg font-semibold mb-2">Overall Progress</h3>
-            <div className="w-full bg-[#31312E] rounded-full h-4">
+        <TabsContent value="progress" className="flex-1 p-6 overflow-auto">
+          <h2 className="text-xl font-bold mb-6 text-[var(--text-secondary)]">Progress Report</h2>
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold mb-3 text-[var(--text-secondary)]">Overall Progress</h3>
+            <div className={`w-full ${messageBgColor} rounded-full h-4`}>
               <div
-                className="bg-[#A3512B] h-4 rounded-full transition-all duration-300"
+                className="bg-[var(--accent)] h-4 rounded-full transition-all duration-300"
                 style={{ width: `${autonomyLevel}%` }}
               ></div>
             </div>
-            <p className="mt-2 text-right">{autonomyLevel}%</p>
+            <p className="mt-2 text-right text-[var(--text-secondary)]">{autonomyLevel}%</p>
           </div>
-          <Button onClick={requestProgressReport} className="mb-4">
+          <Button 
+            onClick={requestProgressReport} 
+            className={`mb-6 ${inputBgColor} hover:bg-[var(--button-hover)] text-[var(--text)]`}
+          >
             Get Progress Report
           </Button>
           {progressReport && (
-            <div className="bg-[#31312E] p-3 rounded">
+            <div className={`${messageBgColor} p-4 rounded-lg text-[var(--text)] shadow-sm`}>
               <pre className="whitespace-pre-wrap">{progressReport}</pre>
             </div>
           )}
@@ -159,7 +176,7 @@ const MainContent: React.FC<MainContentProps> = ({
         variant="ghost"
         size="icon"
         onClick={togglePreview}
-        className="fixed top-1/2 right-0 transform -translate-y-1/2 z-40 bg-[#2A2A2A] hover:bg-[#3A3A3A] rounded-l-md"
+        className={`fixed top-1/2 right-0 transform -translate-y-1/2 z-40 ${inputBgColor} hover:bg-[var(--button-hover)] rounded-l-md text-[var(--text)]`}
         title="Toggle Preview"
       >
         <PanelRightOpen className="h-5 w-5" />

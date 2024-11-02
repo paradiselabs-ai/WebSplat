@@ -6,9 +6,11 @@ import { AppProvider } from '../context/AppContext';
 
 const ClientApp = () => {
   return (
-    <AppProvider>
-      <App />
-    </AppProvider>
+    <div className="min-h-screen bg-[#212121]">
+      <AppProvider>
+        <App />
+      </AppProvider>
+    </div>
   );
 };
 

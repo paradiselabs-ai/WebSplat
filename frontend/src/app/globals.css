@@ -1,27 +1,149 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* tailwindcss */
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Base theme colors */
+  --background: #212121;
+  --foreground: #FFFFFF;
+  --chat-area: #212121;
+  --left-panel: #171717;
+  --button-active: #FB9B54;
+  --accent-primary: #4A4A4A;
+  --accent-secondary: #808080;
+  --accent-highlight: #b6b6b6;
+  --main-bg: #ee8535;
+  --nav-bg: #222222;
+
+  /* Component specific colors */
+  --text-primary: var(--foreground);
+  --text-secondary: #FFFFFF;
+  --text-tertiary: #888888;
+  --text-hover: #C1C1C1;
+
+  --button-bg: #525252;
+  --button-hover: #222222;
+  --button-active-bg: #222222;
+
+  --input-bg: #525252;
+  --input-border: var(--accent-primary);
+  --input-focus: var(--button-active-bg);
+
+  --sidebar-bg: #2A2A2A;
+  --sidebar-hover: #3A3A3A;
+
+  --panel-bg: #171717;
+  --panel-border: var(--accent-primary);
+
+  --header-text: var(--text-secondary);
+  --header-hover: var(--text-hover);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+[data-theme='light'] {
+  --background: #F2F2F2; /* Softer, creamier white */
+  --foreground: #1E3B91; /* Darker text color for better contrast */
+  --chat-area: #F5F5F5; /* Light gray tone for secondary background */
+  --left-panel: #E5E5E5; /* Beige tone for sidebar background */
+  --button-active: #00B4B5; /* Darker text color for active buttons */
+  --accent-primary: #C9C9C9; /* Light gray tone for primary accent */
+  --accent-secondary: #E5E5E5; /* Darker gray tone for secondary accent */
+  --accent-highlight: #1E3B91; /* Medium gray tone for highlight accent */
+  --main-bg: #1E3B91; /* Same as background */
+  --nav-bg: #F5F5F5; /* Same as left-panel */
+
+  --text-primary: var(--foreground);
+  --text-secondary: #1E3B91; /* Darker text color for secondary text */
+  --text-tertiary: #303A4A; /* Medium gray tone for tertiary text */
+  --text-hover: #00B4B5; /* Darker text color for hover */
+
+  --button-bg: #C9C9C9; /* Light gray tone for button background */
+  --button-hover: #F5F5F5; /* Darker gray tone for button hover */
+  --button-active-bg: #F5F5F5; /* Medium gray tone for active button background */
+
+  --input-bg: #FFFFFF; /* White background for input fields */
+  --input-border: var(--accent-primary); /* Light gray tone for input border */
+  --input-focus: var(--button-active-bg); /* Medium gray tone for input focus */
+
+  --sidebar-bg: #E5E5E5; /* Beige tone for sidebar background */
+  --sidebar-hover: #D9D9D9; /* Light gray tone for sidebar hover */
+
+  --panel-bg: #F5F5F5; /* Light gray tone for panel background */
+  --panel-border: var(--accent-primary); /* Light gray tone for panel border */
+
+  --header-text: var(--text-secondary);
+  --header-hover: var(--text-hover);
 }
 
 body {
-  color: var(--foreground);
+  color: var(--text-primary);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+/* Remove default focus outline for all inputs */
+input:focus {
+  outline: none;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--left-panel);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--accent-primary);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-secondary);
+}
+
+/* Focus styles */
+*:focus-visible {
+  outline: none;
+}
+
+/* Button hover transitions */
+button {
+  transition: all 0.2s ease-in-out;
+}
+
+/* Selection styling */
+::selection {
+  background-color: var(--accent-primary);
+  color: var(--button-active);
+}
+
+.header-container {
+  background: var(--main-bg);
+}
+
+.top-header {
+  background: var(--nav-bg);
+  position: relative;
+}
+
+.nav-header {
+  background: var(--nav-bg);
+  position: relative;
+}
+
+.nav-header::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -10px;
+  height: 10px;
+  background: linear-gradient(270deg,
+    var(--nav-bg),
+    var(--nav-bg),
+    var(--main-bg)
+  );
 }

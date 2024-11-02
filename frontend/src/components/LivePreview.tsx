@@ -10,14 +10,18 @@ interface LivePreviewProps {
 
 const LivePreview: React.FC<LivePreviewProps> = ({ workspaceId, mode, generatedHtml }) => {
   if (!workspaceId) {
-    return <div>No preview available</div>;
+    return (
+      <div className="flex items-center justify-center h-full text-[#676767]">
+        No preview available
+      </div>
+    );
   }
 
   const content = generatedHtml || `http://localhost:8000/serve/${workspaceId}/index.html`;
 
   return (
     <div className={`w-full h-full overflow-auto ${mode === 'mobile' ? 'max-w-[375px] mx-auto' : ''}`}>
-      <div className={`border-2 border-[#444444] rounded-lg overflow-hidden ${mode === 'mobile' ? 'w-[375px] h-[667px]' : 'w-full h-full'}`}>
+      <div className={`border-2 border-[#4A4A4A] rounded-lg overflow-hidden ${mode === 'mobile' ? 'w-[375px] h-[667px]' : 'w-full h-full'}`}>
         {generatedHtml ? (
           <iframe
             srcDoc={content}
