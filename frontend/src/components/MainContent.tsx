@@ -60,7 +60,7 @@ const MainContent: React.FC<MainContentProps> = ({
   return (
     <main className="flex-1 flex flex-col overflow-hidden bg-[var(--chat-area)] text-[var(--text)] transition-all duration-300 ease-in-out">
       <Tabs value={activeView} onValueChange={setActiveView} className="flex-1 flex flex-col">
-        <TabsContent value="chat" className="flex-1 flex flex-col">
+        <TabsContent value="chat" className="flex-1 flex flex-col content-transition">
           <div className="flex-1 flex justify-center items-center">
             <div className="w-3/5 max-w-3xl">
               <ScrollArea className={`h-[calc(100vh-10rem)] mt-4 ${isFirstInteraction ? 'hidden' : ''}`}>
@@ -124,51 +124,55 @@ const MainContent: React.FC<MainContentProps> = ({
         </TabsContent>
 
         {agentViews.map((view, index) => (
-          <TabsContent key={index} value={view.name} className="flex-1 p-6 overflow-auto">
-            <h2 className="text-xl font-bold mb-6 text-[var(--text-secondary)]">{view.name}</h2>
-            <ul className="space-y-4">
-              {view.content.map((item: string, i: number) => (
-                <li key={i} className={`${messageBgColor} p-4 rounded-lg text-[var(--text)] shadow-sm`}>{item}</li>
-              ))}
-            </ul>
-            <Button 
-              onClick={() => requestStrategyExplanation(view.name)} 
-              className={`mt-6 ${inputBgColor} hover:bg-[var(--button-hover)] text-[var(--text)]`}
-            >
-              Explain {view.name} Strategy
-            </Button>
-            {strategyExplanation && (
-              <div className={`mt-6 ${messageBgColor} p-4 rounded-lg text-[var(--text)] shadow-sm`}>
-                <h3 className="font-bold mb-3">{view.name} Strategy Explanation:</h3>
-                <p>{strategyExplanation}</p>
-              </div>
-            )}
+          <TabsContent key={index} value={view.name} className="flex-1 p-6 overflow-auto content-transition">
+            <div className="content-transition">
+              <h2 className="text-xl font-bold mb-6 text-[var(--text-secondary)]">{view.name}</h2>
+              <ul className="space-y-4">
+                {view.content.map((item: string, i: number) => (
+                  <li key={i} className={`${messageBgColor} p-4 rounded-lg text-[var(--text)] shadow-sm`}>{item}</li>
+                ))}
+              </ul>
+              <Button 
+                onClick={() => requestStrategyExplanation(view.name)} 
+                className={`mt-6 ${inputBgColor} hover:bg-[var(--button-hover)] text-[var(--text)]`}
+              >
+                Explain {view.name} Strategy
+              </Button>
+              {strategyExplanation && (
+                <div className={`mt-6 ${messageBgColor} p-4 rounded-lg text-[var(--text)] shadow-sm`}>
+                  <h3 className="font-bold mb-3">{view.name} Strategy Explanation:</h3>
+                  <p>{strategyExplanation}</p>
+                </div>
+              )}
+            </div>
           </TabsContent>
         ))}
 
-        <TabsContent value="progress" className="flex-1 p-6 overflow-auto">
-          <h2 className="text-xl font-bold mb-6 text-[var(--text-secondary)]">Progress Report</h2>
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold mb-3 text-[var(--text-secondary)]">Overall Progress</h3>
-            <div className={`w-full ${messageBgColor} rounded-full h-4`}>
-              <div
-                className="bg-[var(--accent)] h-4 rounded-full transition-all duration-300"
-                style={{ width: `${autonomyLevel}%` }}
-              ></div>
+        <TabsContent value="progress" className="flex-1 p-6 overflow-auto content-transition">
+          <div className="content-transition">
+            <h2 className="text-xl font-bold mb-6 text-[var(--text-secondary)]">Progress Report</h2>
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3 text-[var(--text-secondary)]">Overall Progress</h3>
+              <div className={`w-full ${messageBgColor} rounded-full h-4`}>
+                <div
+                  className="bg-[var(--accent)] h-4 rounded-full transition-all duration-300"
+                  style={{ width: `${autonomyLevel}%` }}
+                ></div>
+              </div>
+              <p className="mt-2 text-right text-[var(--text-secondary)]">{autonomyLevel}%</p>
             </div>
-            <p className="mt-2 text-right text-[var(--text-secondary)]">{autonomyLevel}%</p>
+            <Button 
+              onClick={requestProgressReport} 
+              className={`mb-6 ${inputBgColor} hover:bg-[var(--button-hover)] text-[var(--text)]`}
+            >
+              Get Progress Report
+            </Button>
+            {progressReport && (
+              <div className={`${messageBgColor} p-4 rounded-lg text-[var(--text)] shadow-sm`}>
+                <pre className="whitespace-pre-wrap">{progressReport}</pre>
+              </div>
+            )}
           </div>
-          <Button 
-            onClick={requestProgressReport} 
-            className={`mb-6 ${inputBgColor} hover:bg-[var(--button-hover)] text-[var(--text)]`}
-          >
-            Get Progress Report
-          </Button>
-          {progressReport && (
-            <div className={`${messageBgColor} p-4 rounded-lg text-[var(--text)] shadow-sm`}>
-              <pre className="whitespace-pre-wrap">{progressReport}</pre>
-            </div>
-          )}
         </TabsContent>
       </Tabs>
 

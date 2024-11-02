@@ -7,7 +7,7 @@ interface MinimalAutonomyControlProps {
 
 const MinimalAutonomyControl = ({ value, onChange }: MinimalAutonomyControlProps) => {
   return (
-    <div className="fixed top-14 right-4 bg-[var(--panel-bg)] border border-[var(--panel-border)] p-4 rounded-lg shadow-lg z-50">
+    <div className="menu-animation fixed top-14 right-4 bg-[var(--panel-bg)] border border-[var(--panel-border)] p-4 rounded-lg shadow-lg z-50">
       <h3 className="text-lg font-semibold mb-2 text-[var(--header-text)]">AI Autonomy Level</h3>
       <div className="flex items-center space-x-4">
         <input

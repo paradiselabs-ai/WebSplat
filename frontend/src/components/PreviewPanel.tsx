@@ -1,17 +1,24 @@
-import { useState } from 'react';
 import { Monitor, Smartphone, X } from "lucide-react";
 import { Button } from "./ui/button";
 import LivePreview from "./LivePreview";
 
 interface PreviewPanelProps {
   previewOpen: boolean;
+  previewMode: 'desktop' | 'mobile';
+  setPreviewMode: (mode: 'desktop' | 'mobile') => void;
   togglePreview: () => void;
   generatedHtml?: string;
+  workspaceId: string | null;
 }
 
-const PreviewPanel = ({ previewOpen, togglePreview, generatedHtml }: PreviewPanelProps) => {
-  const [previewMode, setPreviewMode] = useState<'desktop' | 'mobile'>('desktop');
-
+const PreviewPanel = ({ 
+  previewOpen, 
+  previewMode,
+  setPreviewMode,
+  togglePreview, 
+  generatedHtml,
+  workspaceId 
+}: PreviewPanelProps) => {
   return (
     <aside className={`fixed inset-0 bg-[var(--panel-bg)] text-[var(--header-text)] transition-transform duration-300 ease-in-out ${previewOpen ? 'translate-x-0' : 'translate-x-full'} z-50`}>
       <div className="h-14 border-b border-[var(--panel-border)] flex items-center justify-between px-4">
@@ -44,7 +51,7 @@ const PreviewPanel = ({ previewOpen, togglePreview, generatedHtml }: PreviewPane
         </div>
       </div>
       <div className="h-[calc(100%-3.5rem)] p-4">
-        <LivePreview generatedHtml={generatedHtml || ''} mode={previewMode} workspaceId={null} />
+        <LivePreview generatedHtml={generatedHtml || ''} mode={previewMode} workspaceId={workspaceId} />
       </div>
     </aside>
   );

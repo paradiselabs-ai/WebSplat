@@ -14,7 +14,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
   if (!isOpen) return null;
 
   return (
-    <div className="absolute right-0 top-14 w-64 bg-[var(--panel-bg)] rounded-lg shadow-lg p-4 border border-[var(--panel-border)] z-50">
+    <div className="menu-animation absolute right-0 top-14 w-64 bg-[var(--panel-bg)] rounded-lg shadow-lg p-4 border border-[var(--panel-border)] z-50">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-semibold text-[var(--header-text)]">Settings</h3>
         <Button
@@ -33,7 +33,7 @@ const SettingsMenu = ({ isOpen, onClose }: SettingsMenuProps) => {
             <Button
               size="icon"
               onClick={toggleTheme}
-              className="text-[var(--header-text)] hover:text-[var(--header-hover)] hover:bg-[var(--button-hover)]"
+              className="theme-icon text-[var(--header-text)] hover:text-[var(--header-hover)] hover:bg-[var(--button-hover)]"
             >
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>

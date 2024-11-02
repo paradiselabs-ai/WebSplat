@@ -7,9 +7,11 @@ interface SidebarProps {
   activeView: string;
   setActiveView: (view: string) => void;
   agentViews: AgentView[];
+  autonomyLevel: number;
+  setAutonomyLevel: (level: number) => void;
 }
 
-const Sidebar = ({ sidebarOpen, activeView, setActiveView, agentViews }: SidebarProps) => {
+const Sidebar = ({ sidebarOpen, activeView, setActiveView, agentViews, autonomyLevel, setAutonomyLevel }: SidebarProps) => {
   return (
     <aside className={`w-64 p-4 flex flex-col bg-[var(--sidebar-bg)] text-[var(--text-tertiary)] fixed h-[calc(100%-5rem)] mt-4 ml-4 mb-6 rounded-2xl transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} z-30`}>
       <Button className="mb-6 bg-transparent text-[var(--text-tertiary)] hover:bg-[var(--sidebar-hover)] transition-all duration-300 transform hover:scale-105">

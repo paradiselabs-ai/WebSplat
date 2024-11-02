@@ -22,8 +22,9 @@
   --text-tertiary: #888888;
   --text-hover: #C1C1C1;
 
-  --button-bg: #525252;
+  --button-bg: #C1C1C1;
   --button-hover: #222222;
+  --button-settings-hover: #222222;
   --button-active-bg: #222222;
 
   --input-bg: #525252;
@@ -41,35 +42,36 @@
 }
 
 [data-theme='light'] {
-  --background: #F2F2F2; /* Softer, creamier white */
-  --foreground: #1E3B91; /* Darker text color for better contrast */
-  --chat-area: #F5F5F5; /* Light gray tone for secondary background */
-  --left-panel: #E5E5E5; /* Beige tone for sidebar background */
-  --button-active: #00B4B5; /* Darker text color for active buttons */
-  --accent-primary: #C9C9C9; /* Light gray tone for primary accent */
-  --accent-secondary: #E5E5E5; /* Darker gray tone for secondary accent */
-  --accent-highlight: #1E3B91; /* Medium gray tone for highlight accent */
-  --main-bg: #1E3B91; /* Same as background */
-  --nav-bg: #F5F5F5; /* Same as left-panel */
+  --background: #F2F2F2;
+  --foreground: #1E3B91;
+  --chat-area: #F5F5F5;
+  --left-panel: #E5E5E5;
+  --button-active: #00B4B5;
+  --accent-primary: #C9C9C9;
+  --accent-secondary: #E5E5E5;
+  --accent-highlight: #1E3B91;
+  --main-bg: #1E3B91;
+  --nav-bg: #F5F5F5;
 
   --text-primary: var(--foreground);
-  --text-secondary: #1E3B91; /* Darker text color for secondary text */
-  --text-tertiary: #303A4A; /* Medium gray tone for tertiary text */
-  --text-hover: #00B4B5; /* Darker text color for hover */
+  --text-secondary: #1E3B91;
+  --text-tertiary: #303A4A;
+  --text-hover: #00B4B5;
 
-  --button-bg: #C9C9C9; /* Light gray tone for button background */
-  --button-hover: #F5F5F5; /* Darker gray tone for button hover */
-  --button-active-bg: #F5F5F5; /* Medium gray tone for active button background */
+  --button-bg: #1e3b91d9;
+  --button-hover: #F5F5F5;
+  --button-settings-hover: #E5E5E5;
+  --button-active-bg: #F5F5F5;
 
-  --input-bg: #FFFFFF; /* White background for input fields */
-  --input-border: var(--accent-primary); /* Light gray tone for input border */
-  --input-focus: var(--button-active-bg); /* Medium gray tone for input focus */
+  --input-bg: #FFFFFF;
+  --input-border: var(--accent-primary);
+  --input-focus: var(--button-active-bg);
 
-  --sidebar-bg: #E5E5E5; /* Beige tone for sidebar background */
-  --sidebar-hover: #D9D9D9; /* Light gray tone for sidebar hover */
+  --sidebar-bg: #E5E5E5;
+  --sidebar-hover: #D9D9D9;
 
-  --panel-bg: #F5F5F5; /* Light gray tone for panel background */
-  --panel-border: var(--accent-primary); /* Light gray tone for panel border */
+  --panel-bg: #F5F5F5;
+  --panel-border: var(--accent-primary);
 
   --header-text: var(--text-secondary);
   --header-hover: var(--text-hover);
@@ -146,4 +148,89 @@ button {
     var(--nav-bg),
     var(--main-bg)
   );
+}
+
+/* Menu animations */
+.menu-animation {
+  animation: menuSlide 0.2s ease-out forwards;
+  transform-origin: top right;
+}
+
+@keyframes menuSlide {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* Theme icon animation */
+.theme-icon {
+  transition: transform 0.3s ease;
+}
+
+.theme-icon:hover {
+  transform: rotate(180deg);
+}
+
+/* Tab transitions */
+[role="tabpanel"] {
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+[role="tabpanel"][data-state="active"] {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Tab trigger transitions */
+[role="tab"] {
+  position: relative;
+  transition: all 0.3s ease-in-out;
+}
+
+[role="tab"]::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--button-active);
+  transition: all 0.3s ease-in-out;
+  transform: translateX(-50%);
+}
+
+[role="tab"][data-state="active"]::after {
+  width: 100%;
+}
+
+/* Content fade transitions */
+.content-transition {
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.content-transition-enter {
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.content-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.content-transition-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.content-transition-exit-active {
+  opacity: 0;
+  transform: translateY(-10px);
 }

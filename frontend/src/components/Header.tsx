@@ -90,7 +90,7 @@ const Header: React.FC<HeaderProps> = ({
           <Button 
             variant="ghost" 
             size="icon" 
-            className="group text-[var(--button-bg)] hover:text-[var(--button-hover)]" 
+            className="group text-[var(--button-bg)] hover:bg-[var(--button-settings-hover)]" 
             onClick={toggleAutonomySlider}
           >
             <Sliders className="h-5 w-5" />
@@ -99,7 +99,7 @@ const Header: React.FC<HeaderProps> = ({
             <Button 
               variant="ghost" 
               size="icon" 
-              className="group text-[var(--button-bg)] hover:text-[var(--button-hover)]"
+              className="group text-[var(--button-bg)] hover:bg-[var(--button-settings-hover)]"
               onClick={toggleSettings}
             >
               <Settings className="h-5 w-5 transition-transform duration-300 group-hover:rotate-180" />
