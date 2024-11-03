@@ -7,6 +7,7 @@ import TypewriterText from './TypewriterText';
 import Loader from './ui/Loader';
 import { ArrowUp, PanelRightOpen } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import StyledButton from './ui/StyledButton';
 
 interface MainContentProps {
   messages: Message[];
@@ -136,21 +137,20 @@ const MainContent: React.FC<MainContentProps> = ({
         {agentViews.map((view, index) => (
           <TabsContent key={index} value={view.name} className="flex-1 p-6 overflow-auto content-transition">
             <div className="content-transition">
-              <h2 className="text-xl font-bold mb-6 text-[var(--text-secondary)]">{view.name}</h2>
               <ul className="space-y-4">
                 {view.content.map((item: string, i: number) => (
                   <li key={i} className={`${messageBgColor} p-4 rounded-lg text-[var(--text)] shadow-sm`}>{item}</li>
                 ))}
               </ul>
-              <Button 
-                onClick={() => requestStrategyExplanation(view.name)} 
-                className={`mt-6 ${inputBgColor} hover:bg-[var(--button-hover)] text-[var(--text)]`}
-              >
-                Explain {view.name} Strategy
-              </Button>
+              <div className="mt-4">
+                <StyledButton 
+                  onClick={() => requestStrategyExplanation(view.name)}
+                >
+                  Explain {view.name} Strategy
+                </StyledButton>
+              </div>
               {strategyExplanation && (
                 <div className={`mt-6 ${messageBgColor} p-4 rounded-lg text-[var(--text)] shadow-sm`}>
-                  <h3 className="font-bold mb-3">{view.name} Strategy Explanation:</h3>
                   <p>{strategyExplanation}</p>
                 </div>
               )}
@@ -160,9 +160,7 @@ const MainContent: React.FC<MainContentProps> = ({
 
         <TabsContent value="progress" className="flex-1 p-6 overflow-auto content-transition">
           <div className="content-transition">
-            <h2 className="text-xl font-bold mb-6 text-[var(--text-secondary)]">Progress Report</h2>
             <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-3 text-[var(--text-secondary)]">Overall Progress</h3>
               <div className={`w-full ${messageBgColor} rounded-full h-4`}>
                 <div
                   className="bg-[var(--accent)] h-4 rounded-full transition-all duration-300"
@@ -171,12 +169,11 @@ const MainContent: React.FC<MainContentProps> = ({
               </div>
               <p className="mt-2 text-right text-[var(--text-secondary)]">{autonomyLevel}%</p>
             </div>
-            <Button 
-              onClick={requestProgressReport} 
-              className={`mb-6 ${inputBgColor} hover:bg-[var(--button-hover)] text-[var(--text)]`}
-            >
-              Get Progress Report
-            </Button>
+            <div className="mb-6">
+              <StyledButton onClick={requestProgressReport}>
+                Get Progress Report
+              </StyledButton>
+            </div>
             {progressReport && (
               <div className={`${messageBgColor} p-4 rounded-lg text-[var(--text)] shadow-sm`}>
                 <pre className="whitespace-pre-wrap">{progressReport}</pre>
