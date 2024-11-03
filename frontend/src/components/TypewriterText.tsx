@@ -47,11 +47,11 @@ const TypewriterText = ({
   }, [text, typeNextCharacter]);
 
   const gradientColors = themeType === 'dark' 
-    ? 'from-white via-orange-100 to-orange-500'
+    ? 'from-white via-white to-[#4DB9CF]'
     : 'from-blue-800 via-blue-900 to-[#00B4B5]' /* [#00B4B5] */
 
   return (
-    <div className={`transform transition-all duration-1000 ease-out ${
+    <div className={`transform transition-all duration-7000 ease-out ${
       isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
     } ${className}`}>
       <div className="relative">

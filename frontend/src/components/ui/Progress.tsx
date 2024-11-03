@@ -18,7 +18,7 @@ export const Progress = ({ value, label = "Project Progress" }: ProgressProps) =
           base: "w-full",
           track: "drop-shadow-md border border-default",
           indicator: themeType === 'dark' 
-            ? "bg-gradient-to-r from-yellow-500 to-orange-500"
+            ? "bg-gradient-to-r from-white to-[#67E8FF]"
             : "bg-gradient-to-r from-[#152861] to-[#00B4B5]",
           label: "tracking-wider font-medium text-default-600",
           value: "text-foreground/60",

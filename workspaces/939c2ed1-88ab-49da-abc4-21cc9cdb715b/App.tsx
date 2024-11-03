@@ -55,7 +55,7 @@ const List = styled.ul`
 
 const Item = styled.li`
   padding: 2rem;
-  background-color: #f5f5f5;
+  background-color: #F5F9FC;
   border-radius: 0.5rem;
 `;
 

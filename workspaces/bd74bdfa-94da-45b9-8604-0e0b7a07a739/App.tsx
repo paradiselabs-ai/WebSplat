@@ -45,7 +45,7 @@ const Wrapper = styled.div`
   justify-content: center;
   align-items: center;
   height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #F5F9FC;
 `;
 
 const Header = styled.header`
@@ -108,6 +108,6 @@ const Footer = styled.footer`
   width: 100%;
   padding: 20px;
   text-align: center;
-  background-color: #f5f5f5;
+  background-color: #F5F9FC;
 `;
 ```

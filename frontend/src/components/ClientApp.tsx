@@ -6,7 +6,7 @@ import { AppProvider } from '../context/AppContext';
 
 const ClientApp = () => {
   return (
-    <div className="min-h-screen bg-[#212121]">
+    <div className="min-h-screen bg-[#1E2128]">
       <AppProvider>
         <App />
       </AppProvider>

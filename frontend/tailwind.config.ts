@@ -24,7 +24,7 @@ const config: Config = {
         'main-bg': 'var(--main-bg)',
         'nav-bg': 'var(--nav-bg)',
         dark: {
-          bg: '#212121',
+          bg: '#1E2128',
           chat: '#2F2F2F',
           panel: '#171717',
           button: {
@@ -32,7 +32,7 @@ const config: Config = {
           },
           accent: {
             primary: '#4A4A4A',
-            secondary: '#808080',
+            secondary: '#243242',
             highlight: '#9A9A9A',
           },
         },

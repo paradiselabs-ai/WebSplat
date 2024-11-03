@@ -51,7 +51,7 @@ const App = () => {
     } = context;
   
     return (
-      <div className="h-screen flex flex-col bg-[#212121]">
+      <div className="h-screen flex flex-col bg-[#1E2128]">
         <Header
           isFirstInteraction={isFirstInteraction}
           projectName={projectName}

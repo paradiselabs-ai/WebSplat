@@ -5,36 +5,36 @@
 
 :root {
   /* Base theme colors */
-  --background: #212121;
-  --foreground: #FFFFFF;
-  --chat-area: #212121;
-  --left-panel: #171717;
-  --button-active: #FB9B54;
-  --accent-primary: #4A4A4A;
-  --accent-secondary: #808080;
-  --accent-highlight: #b6b6b6;
-  --main-bg: #ee8535;
-  --nav-bg: #222222;
+  --background: #1A1D24;        /* Darker blue-gray base */
+  --foreground: #FFFFFF;        /* Keep white for contrast */
+  --chat-area: #1E2128;        /* Slightly lighter than background */
+  --left-panel: #16191F;       /* Slightly darker than background */
+  --button-active: #3DB9CF;    /* New cyan accent - complementary to original orange */
+  --accent-primary: #2A2F38;   /* Structured gray with blue undertone */
+  --accent-secondary: #485263; /* Mid-tone blue-gray */
+  --accent-highlight: #5B9ECA; /* Light blue highlight */
+  --main-bg: #2C8BA3;         /* Darker version of button-active */
+  --nav-bg: #1C2027;          /* Slight variant of background */
 
   /* Component specific colors */
   --text-primary: var(--foreground);
-  --text-secondary: #FFFFFF;
-  --text-tertiary: #888888;
-  --text-hover: #C1C1C1;
+  --text-secondary: #E8ECF3;   /* Slightly blue-tinted white */
+  --text-tertiary: #9BA1AF;    /* Warmer gray for better readability */
+  --text-hover: #67E8FF;       /* Bright cyan for hover states */
 
-  --button-bg: #C1C1C1;
-  --button-hover: #222222;
-  --button-settings-hover: #222222;
-  --button-active-bg: #222222;
+  --button-bg: #E8ECF3;        /* Matching accent-primary */
+  --button-hover: #1C2027;     /* Darker state */
+  --button-settings-hover: #1C2027;
+  --button-active-bg: #1C2027;
 
-  --input-bg: #525252;
-  --input-border: var(--accent-primary);
+  --input-bg: #2A2F38;         /* Matching accent-primary */
+  --input-border: #485263;     /* Using accent-secondary */
   --input-focus: var(--button-active-bg);
 
-  --sidebar-bg: #2A2A2A;
-  --sidebar-hover: #3A3A3A;
+  --sidebar-bg: #16191F;       /* Slightly lighter than background */
+  --sidebar-hover: #242830;    /* Lighter hover state */
 
-  --panel-bg: #171717;
+  --panel-bg: #16191F;         /* Matching left-panel */
   --panel-border: var(--accent-primary);
 
   --header-text: var(--text-secondary);
@@ -44,14 +44,14 @@
 [data-theme='light'] {
   --background: #F2F2F2;
   --foreground: #1E3B91;
-  --chat-area: #F5F5F5;
+  --chat-area: #F5F9FC;
   --left-panel: #E5E5E5;
   --button-active: #00B4B5;
   --accent-primary: #C9C9C9;
   --accent-secondary: #E5E5E5;
   --accent-highlight: #1E3B91;
   --main-bg: #1E3B91;
-  --nav-bg: #F5F5F5;
+  --nav-bg: #F5F9FC;
 
   --text-primary: var(--foreground);
   --text-secondary: #1E3B91;
@@ -59,9 +59,9 @@
   --text-hover: #00B4B5;
 
   --button-bg: #1e3b91d9;
-  --button-hover: #F5F5F5;
+  --button-hover: #F5F9FC;
   --button-settings-hover: #E5E5E5;
-  --button-active-bg: #F5F5F5;
+  --button-active-bg: #F5F9FC;
 
   --input-bg: #FFFFFF;
   --input-border: var(--accent-primary);
@@ -70,7 +70,7 @@
   --sidebar-bg: #E5E5E5;
   --sidebar-hover: #D9D9D9;
 
-  --panel-bg: #F5F5F5;
+  --panel-bg: #F5F9FC;
   --panel-border: var(--accent-primary);
 
   --header-text: var(--text-secondary);

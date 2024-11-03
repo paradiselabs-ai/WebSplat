@@ -1,10 +1,10 @@
 // Current theme colors (dark theme)
 export const colors = {
   // Main background colors
-  background: '#212121',      // Main background color
-  chatArea: '#212121',        // Main chat area background
+  background: '#1E2128',      // Main background color
+  chatArea: '#1E2128',        // Main chat area background
   leftPanel: '#171717',       // Left panel/sidebar background
-  mainBg: '#212121',         // Very top header background
+  mainBg: '#1E2128',         // Very top header background
   navBg: '#222222',          // Navigation header background
   
   // Text colors
@@ -13,7 +13,7 @@ export const colors = {
   
   // Accent colors
   accentPrimary: '#4A4A4A',   // Text selection color
-  accentSecondary: '#808080', // Secondary accent
+  accentSecondary: '#243242', // Secondary accent
   accentHighlight: '#9A9A9A', // Outside text bar color
 
   // Component specific colors (extracted from components)
@@ -34,13 +34,13 @@ export const colors = {
   input: {
     background: '#525252',
     border: '#4A4A4A',
-    placeholder: '#808080',
+    placeholder: '#243242',
     focus: '#8E8E8E'
   },
 
   text: {
     primary: '#676767',
-    secondary: '#808080',
+    secondary: '#243242',
     tertiary: '#9A9A9A',
     hover: '#C1C1C1'
   }

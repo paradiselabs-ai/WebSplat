@@ -31,7 +31,7 @@ const Testimonials = () => {
 
 const Container = styled.section`
   padding: 4rem 0;
-  background-color: #f5f5f5;
+  background-color: #F5F9FC;
 `;
 
 const Heading = styled.h2`

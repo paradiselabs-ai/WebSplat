@@ -78,7 +78,7 @@ const Container = styled.div`
   justify-content: center;
   text-align: center;
   height: 100vh;
-  background-color: #f5f5f5;
+  background-color: #F5F9FC;
 `;
 
 const Header = styled.div`

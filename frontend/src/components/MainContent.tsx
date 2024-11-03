@@ -4,6 +4,7 @@ import { ScrollArea } from "./ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Message } from '../utils/Message';
 import TypewriterText from './TypewriterText';
+import AITypewriterText from './AITypewriterText';
 import Loader from './ui/Loader';
 import { ArrowUp, PanelRightOpen } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
@@ -54,14 +55,11 @@ const MainContent: React.FC<MainContentProps> = ({
   isSending,
 }) => {
   const { themeType } = useTheme();
-  const inputBgColor = themeType === 'dark' ? 'bg-[#212121]' : 'bg-[#F5F5F5]';
+  const inputBgColor = themeType === 'dark' ? 'bg-[#1E2128]' : 'bg-[#F5F9FC]';
   const inputTextColor = themeType === 'dark' ? 'text-white' : 'text-[#1E293B]';
-  const inputPlaceholderColor = themeType === 'dark' ? 'placeholder-[#808080]' : 'placeholder-[#94A3B8]';
+  const inputPlaceholderColor = themeType === 'dark' ? 'placeholder-[#E8ECF3]' : 'placeholder-[#94A3B8]';
   const messageBgColor = themeType === 'dark' ? 'bg-[#4A4A4A]' : 'bg-[#F8FAFC]';
-  const userMessageBgColor = themeType === 'dark' ? 'bg-[#808080]' : 'bg-[#E2E8F0]';
-
-  const lastMessage = messages[messages.length - 1];
-  const showLoaderAfterUserMessage = lastMessage?.role === 'user' && isTyping;
+  const userMessageBgColor = themeType === 'dark' ? 'bg-[#243242]' : 'bg-[#E2E8F0]';
 
   return (
     <main className="flex-1 flex flex-col overflow-hidden bg-[var(--chat-area)] text-[var(--text)] transition-all duration-300 ease-in-out">
@@ -70,32 +68,49 @@ const MainContent: React.FC<MainContentProps> = ({
           <div className="flex-1 flex justify-center items-center">
             <div className="w-3/5 max-w-3xl">
               <ScrollArea className={`h-[calc(100vh-10rem)] mt-4 ${isFirstInteraction ? 'hidden' : ''}`}>
-                {messages.map((message: Message, index: number) => (
-                  <div 
-                    key={index} 
-                    className={`mb-4 relative ${
-                      message.role === 'ai' 
-                        ? `${messageBgColor} text-[var(--text)] p-3 rounded-2xl` 
-                        : `${userMessageBgColor} text-[var(--text)] p-3 rounded-2xl`
-                    }`}
-                  >
-                    <p className={message.role === 'ai' ? 'font-tiempos text-base' : 'font-styrene text-[15px]'}>
-                      {message.content}
-                    </p>
-                    {index === messages.length - 1 && message.role === 'ai' && !isTyping && (
-                      <Loader isThinking={false} />
-                    )}
-                    {index === messages.length - 1 && message.role === 'user' && isTyping && (
-                      <Loader isThinking={true} />
-                    )}
-                  </div>
-                ))}
-                {messages.length === 0 && !isTyping && (
-                  <div className="relative">
-                    <Loader isThinking={false} />
-                  </div>
-                )}
+                <div className="space-y-6 px-4">
+                  {messages.map((message: Message, index: number) => (
+                    <div 
+                      key={index} 
+                      className={`flex items-start gap-3 ${
+                        message.role === 'user' ? 'justify-end' : 'justify-start'
+                      }`}
+                    >
+                      {message.role !== 'user' && (
+                        <div className="w-8 h-8 flex-shrink-0 mt-1">
+                          <Loader isThinking={false} />
+                        </div>
+                      )}
+                      <div
+                        className={`max-w-[70%] ${
+                          message.role === 'user'
+                            ? `${userMessageBgColor} text-[var(--text)] p-3 rounded-2xl`
+                            : 'text-[var(--text)]'
+                        }`}
+                      >
+                        {message.role === 'ai' ? (
+                          <AITypewriterText text={message.content} />
+                        ) : (
+                          message.content
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {/* Thinking indicator */}
+                  {isTyping && (
+                    <div className="flex items-start gap-3">
+                      <div className="w-8 h-8 flex-shrink-0 mt-1">
+                        <Loader isThinking={true} />
+                      </div>
+                      <div className="text-[var(--text)] opacity-50">
+                        Thinking...
+                      </div>
+                    </div>
+                  )}
+                </div>
               </ScrollArea>
+              
               <div 
                 className={`relative transition-all duration-1000 ease-in-out ${
                   isFirstInteraction 
