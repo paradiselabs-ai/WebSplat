@@ -8,6 +8,7 @@ import Loader from './ui/Loader';
 import { ArrowUp, PanelRightOpen } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import StyledButton from './ui/StyledButton';
+import Progress from './ui/Progress';
 
 interface MainContentProps {
   messages: Message[];
@@ -161,13 +162,7 @@ const MainContent: React.FC<MainContentProps> = ({
         <TabsContent value="progress" className="flex-1 p-6 overflow-auto content-transition">
           <div className="content-transition">
             <div className="mb-6">
-              <div className={`w-full ${messageBgColor} rounded-full h-4`}>
-                <div
-                  className="bg-[var(--accent)] h-4 rounded-full transition-all duration-300"
-                  style={{ width: `${autonomyLevel}%` }}
-                ></div>
-              </div>
-              <p className="mt-2 text-right text-[var(--text-secondary)]">{autonomyLevel}%</p>
+              <Progress value={autonomyLevel} label="Project Progress" />
             </div>
             <div className="mb-6">
               <StyledButton onClick={requestProgressReport}>

@@ -97,6 +97,16 @@ Reusable UI components:
   - Interactive hover effects
   - Supports thinking/idle states
 - `Switch.tsx`: Toggle switch component
+- `Progress.tsx`: Progress bar component
+  - Theme-aware gradient styling
+  - Smooth transitions
+  - Label and value display
+  - NextUI-based implementation
+- `StyledButton.tsx`: Enhanced button component
+  - Neumorphic shadow effects
+  - Hover and active state animations
+  - Theme-aware styling
+  - Custom border transitions
 
 ### `/src/context`
 Application state management:

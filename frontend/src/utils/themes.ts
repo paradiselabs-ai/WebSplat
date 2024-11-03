@@ -26,7 +26,7 @@ export const darkTheme = {
     accentPrimary: '#4A4A4A',
     accentSecondary: '#808080',
     accentHighlight: '#9A9A9A',
-    logoAnimation: '#FB9B54',  // Added for WebSplat logo hover effect
+    logoAnimation: '#FB9B54',
     
     // Hover States
     hoverBackground: '#3A3A3A',
@@ -45,6 +45,12 @@ export const darkTheme = {
     loaderGradientEnd: 'rgba(0, 0, 0, 0.6)',
     loaderGlowPrimary: 'rgba(255, 255, 255, 0.8)',
     loaderGlowSecondary: '#FB9B54',
+
+    // Progress Bar Colors
+    progressGradientStart: '#FF69B4', // Pink
+    progressGradientEnd: '#FFD700',   // Yellow
+    progressTrackBg: '#2A2A2A',
+    progressTextColor: '#FFFFFF',
 };
 
 export const lightTheme = {
@@ -75,7 +81,7 @@ export const lightTheme = {
     accentPrimary: '#C9C9C9',
     accentSecondary: '#A9A9A9',
     accentHighlight: '#969696',
-    logoAnimation: '#00B4B5',  // Added for WebSplat logo hover effect
+    logoAnimation: '#00B4B5',
     
     // Hover States
     hoverBackground: '#D9D9D9',
@@ -94,6 +100,12 @@ export const lightTheme = {
     loaderGradientEnd: 'rgba(200, 200, 200, 0.6)',
     loaderGlowPrimary: 'rgba(255, 255, 255, 0.9)',
     loaderGlowSecondary: '#FB9B54',
+
+    // Progress Bar Colors
+    progressGradientStart: '#FF1493', // Deep Pink
+    progressGradientEnd: '#FFA500',   // Orange
+    progressTrackBg: '#E5E5E5',
+    progressTextColor: '#333333',
 };
 
 export type Theme = typeof darkTheme;
