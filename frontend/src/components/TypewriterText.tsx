@@ -62,7 +62,7 @@ const TypewriterText = ({
           {showCursor && (
             <span 
               className={`inline-block w-0.5 h-8 md:h-10 ml-1 animate-cursor-blink ${
-                themeType === 'dark' ? 'bg-orange-300' : 'bg-gray-700'
+                themeType === 'dark' ? 'bg-blue-300' : 'bg-gray-700'
               }`}
               style={{ verticalAlign: 'middle' }}
             />
