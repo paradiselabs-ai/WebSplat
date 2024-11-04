@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { Message } from './Message';
 import { AgentView } from './AgentView';
-import { updateAgentView, addMessage } from './websplatUtils';
+import { updateAgentView } from './websplatUtils';
+import { initializeMessageAnimation } from '../components/AITypewriterText';
 
 interface WebSocketHandlers {
   setGeneratedHtml: (html: string) => void;
   setOverallProgress: (progress: number) => void;
   setProgressReport: React.Dispatch<React.SetStateAction<string>>;
   setAgentViews: (views: AgentView[]) => void;
-  setMessages: (messages: Message[]) => void;
+  setMessages: (updater: (prevMessages: Message[]) => Message[]) => void;
   setIsTyping: (isTyping: boolean) => void;
   setCurrentAiMessage: (message: string) => void;
 }
@@ -36,7 +37,7 @@ const useWebSocket = (
       
       newSocket.onopen = () => {
         console.log('WebSocket connection established');
-        handlers.setIsTyping(true); // Set typing to true when connection is established
+        handlers.setIsTyping(true);
       };
 
       newSocket.onmessage = (event) => {
@@ -46,12 +47,12 @@ const useWebSocket = (
 
       newSocket.onclose = () => {
         console.log('WebSocket connection closed');
-        handlers.setIsTyping(false); // Set typing to false when connection is closed
+        handlers.setIsTyping(false);
       };
 
       newSocket.onerror = (error) => {
         console.error('WebSocket error:', error);
-        handlers.setIsTyping(false); // Set typing to false on error
+        handlers.setIsTyping(false);
       };
 
       setSocket(newSocket);
@@ -69,7 +70,7 @@ const useWebSocket = (
     data: WebSocketMessage,
     handlers: WebSocketHandlers,
     agentViews: AgentView[],
-    messages: Message[]
+    currentMessages: Message[]
   ) => {
     const {
       setGeneratedHtml,
@@ -109,21 +110,33 @@ const useWebSocket = (
         break;
 
       case 'chat_message':
-        if (data.role && typeof data.content === 'string') {
-          if (data.role === 'ai') {
-            if (data.content === '') {
-              // Keep typing true but clear current message when empty content received
-              setCurrentAiMessage('');
-            } else {
-              // Update current message and keep typing true while receiving content
-              setCurrentAiMessage(data.content);
-            }
-          } else {
-            // When the full message is received, add it to messages and set typing false
-            setMessages(addMessage(messages, data.role, data.content, data.agent));
-            setIsTyping(false);
+        if (!data.role || typeof data.content !== 'string') return;
+        
+        const role = data.role as 'ai' | 'user';
+        const content = data.content;
+
+        if (role === 'ai') {
+          if (content === '') {
             setCurrentAiMessage('');
+          } else {
+            // Set current message first
+            setCurrentAiMessage(content);
+            
+            // Then update messages and initialize animation
+            setMessages(prevMessages => {
+              const messageId = `message-${prevMessages.length}`;
+              initializeMessageAnimation(messageId, content);
+              return [...prevMessages, { role, content, agent: data.agent }];
+            });
+            
+            // Finally set typing state
+            setIsTyping(false);
           }
+        } else {
+          // For user messages
+          setMessages(prevMessages => [...prevMessages, { role, content, agent: data.agent }]);
+          setIsTyping(false);
+          setCurrentAiMessage('');
         }
         break;
 

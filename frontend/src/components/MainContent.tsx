@@ -89,7 +89,10 @@ const MainContent: React.FC<MainContentProps> = ({
                         }`}
                       >
                         {message.role === 'ai' ? (
-                          <AITypewriterText text={message.content} />
+                          <AITypewriterText 
+                            message={message} 
+                            index={index}
+                          />
                         ) : (
                           message.content
                         )}
@@ -97,7 +100,6 @@ const MainContent: React.FC<MainContentProps> = ({
                     </div>
                   ))}
                   
-                  {/* Thinking indicator */}
                   {isTyping && (
                     <div className="flex items-start gap-3">
                       <div className="relative" style={{ width: '20px', height: '20px' }}>

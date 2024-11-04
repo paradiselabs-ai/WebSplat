@@ -5,7 +5,9 @@ import { Message } from '../utils/Message';
 import { AgentView } from '../utils/AgentView';
 import useWebSocket from '../utils/websocket';
 import { Layout, DollarSign, Search, BarChart2, Cloud } from 'lucide-react';
+import AnimationManager from '../components/AITypewriterText';
 import axios from 'axios';
+import { initializeMessageAnimation } from '../components/AITypewriterText';
 
 interface AppContextProps { 
   children: React.ReactNode;
@@ -79,62 +81,64 @@ const AppProvider: React.FC<AppContextProps> = ({ children }) => {
   const [isAutonomySliderVisible, setIsAutonomySliderVisible] = useState<boolean>(false);
   const [previewOpen, setPreviewOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-  const [overallProgress, setOverallProgress] = useState<number>(0);
-  const [cursorPosition, setCursorPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   const socket = useWebSocket(workspaceId, {
     setGeneratedHtml,
-    setOverallProgress,
+    setOverallProgress: () => {},
     setProgressReport,
     setAgentViews,
-    setMessages,
+    setMessages: (updater) => {
+      setMessages(prevMessages => {
+        const newMessages = updater(prevMessages);
+        const lastMessage = newMessages[newMessages.length - 1];
+        if (lastMessage && lastMessage.role === 'ai') {
+          // Use the same messageId format as in AITypewriterText
+          const messageId = `message-${newMessages.length - 1}`;
+          initializeMessageAnimation(messageId, lastMessage.content);
+        }
+        return newMessages;
+      });
+    },
     setIsTyping,
     setCurrentAiMessage,
   }, agentViews, messages);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      setCursorPosition({ x: e.clientX, y: e.clientY });
+      const windowHeight = window.innerHeight;
+      const tolerance = 50;
+
+      if ((e.clientX <= tolerance && e.clientY >= windowHeight / 2 - tolerance && e.clientY <= windowHeight / 2 + tolerance) || 
+          (e.clientX <= tolerance && e.clientY >= windowHeight - tolerance)) {
+        setSidebarOpen(true);
+      } else if (e.clientX > 300 && sidebarOpen) {
+        setSidebarOpen(false);
+      }
     };
 
     window.addEventListener('mousemove', handleMouseMove);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, []);
-
-  useEffect(() => {
-    const windowHeight = typeof window !== 'undefined' ? window.innerHeight : 0;
-    const tolerance = 50;
-
-    if ((cursorPosition.x <= tolerance && cursorPosition.y >= windowHeight / 2 - tolerance && cursorPosition.y <= windowHeight / 2 + tolerance) || 
-        (cursorPosition.x <= tolerance && cursorPosition.y >= windowHeight - tolerance)) {
-      setSidebarOpen(true);
-    } else if (cursorPosition.x > 300 && sidebarOpen) {
-      setSidebarOpen(false);
-    }
-  }, [cursorPosition, sidebarOpen]);
+    return () => window.removeEventListener('mousemove', handleMouseMove);
+  }, [sidebarOpen]);
 
   const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (inputMessage.trim() === '') return;
 
     setIsSending(true);
-    setIsTyping(true); // Set typing to true immediately
-    setCurrentAiMessage(''); // Clear any previous AI message
-    setMessages(prev => [...prev, { role: 'user', content: inputMessage }]);
+    setIsTyping(true);
+    setCurrentAiMessage('');
+    
+    const newMessage: Message = { role: 'user', content: inputMessage };
+    setMessages(prevMessages => [...prevMessages, newMessage]);
     
     if (isFirstInteraction) {
       setIsFirstInteraction(false);
     }
 
-    // Store the input message and clear the input field immediately
     const messageToSend = inputMessage;
     setInputMessage('');
 
     try {
-      // Add artificial delay to ensure loader is visible
       await new Promise(resolve => setTimeout(resolve, 1000));
 
       const response = await axios.post('http://localhost:8000/consult', {
@@ -149,13 +153,13 @@ const AppProvider: React.FC<AppContextProps> = ({ children }) => {
 
     } catch (error) {
       console.error('Error sending message:', error);
-      // Add artificial delay before showing error
       await new Promise(resolve => setTimeout(resolve, 1000));
-      setIsTyping(false); // Set typing to false before adding error message
-      setMessages(prev => [...prev, {
+      setIsTyping(false);
+      const errorMessage: Message = {
         role: 'ai',
         content: 'Sorry, there was an error processing your request. Please try again.'
-      }]);
+      };
+      setMessages(prevMessages => [...prevMessages, errorMessage]);
     } finally {
       setIsSending(false);
     }

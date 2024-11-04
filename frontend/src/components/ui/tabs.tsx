@@ -16,7 +16,7 @@ export const TabsTrigger: React.FC<TabsPrimitive.TabsTriggerProps> = (props) => 
 
 export const TabsContent: React.FC<TabsPrimitive.TabsContentProps> = (props) => (
   <TabsPrimitive.Content
-    className="mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+    className="mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 data-[state=inactive]:absolute data-[state=inactive]:opacity-0 data-[state=inactive]:pointer-events-none"
     {...props}
   />
 );
