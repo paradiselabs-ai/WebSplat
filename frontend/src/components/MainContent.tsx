@@ -77,7 +77,7 @@ const MainContent: React.FC<MainContentProps> = ({
                       }`}
                     >
                       {message.role !== 'user' && (
-                        <div className="w-8 h-8 flex-shrink-0 mt-1">
+                        <div className="relative" style={{ width: '20px', height: '20px' }}>
                           <Loader isThinking={false} />
                         </div>
                       )}
@@ -100,7 +100,7 @@ const MainContent: React.FC<MainContentProps> = ({
                   {/* Thinking indicator */}
                   {isTyping && (
                     <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 flex-shrink-0 mt-1">
+                      <div className="relative" style={{ width: '20px', height: '20px' }}>
                         <Loader isThinking={true} />
                       </div>
                       <div className="text-[var(--text)] opacity-50">
