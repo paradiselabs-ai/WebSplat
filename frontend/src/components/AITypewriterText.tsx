@@ -35,7 +35,7 @@ class AnimationManager {
 
         const elapsed = now - animation.startTime;
         const newIndex = Math.min(
-          Math.floor(elapsed / 30),
+          Math.floor(elapsed / 20),
           animation.content.length
         );
 
@@ -109,7 +109,7 @@ const AITypewriterText: React.FC<TypewriterTextProps> = ({ message, index }) => 
       if (state.isComplete) {
         clearInterval(interval);
       }
-    }, 30);
+    }, 20);
 
     return () => clearInterval(interval);
   }, [messageId, message.content]);

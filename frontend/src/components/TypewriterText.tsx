@@ -55,13 +55,13 @@ const TypewriterText = ({
       isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
     } ${className}`}>
       <div className="relative">
-        <p className="font-serif text-2l md:text-2xl tracking-wide leading-relaxed">
+        <p className="font-serif text-lg md:text-[1.4rem] tracking-wide leading-relaxed">
           <span className={`bg-gradient-to-r ${gradientColors} bg-clip-text text-transparent animate-gradient`}>
             {displayText}
           </span>
           {showCursor && (
             <span 
-              className={`inline-block w-0.5 h-8 md:h-10 ml-1 animate-cursor-blink ${
+              className={`inline-block w-0.5 h-5 md:h-7 ml animate-cursor-blink ${
                 themeType === 'dark' ? 'bg-blue-300' : 'bg-gray-700'
               }`}
               style={{ verticalAlign: 'middle' }}
