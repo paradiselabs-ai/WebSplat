@@ -96,17 +96,30 @@ Reusable UI components:
   - Theme-aware styling
   - Interactive hover effects
   - Supports thinking/idle states
+  - Customizable size and color variants
+  - Smooth transition animations
 - `Switch.tsx`: Toggle switch component
+  - Customizable on/off states
+  - Animated state transitions
+  - Theme-aware styling
+  - Accessible keyboard controls
+  - Optional label integration
 - `Progress.tsx`: Progress bar component
   - Theme-aware gradient styling
   - Smooth transitions
   - Label and value display
   - NextUI-based implementation
+  - Customizable colors and sizes
+  - Support for determinate and indeterminate states
 - `StyledButton.tsx`: Enhanced button component
   - Neumorphic shadow effects
   - Hover and active state animations
   - Theme-aware styling
   - Custom border transitions
+  - Multiple size variants
+  - Loading state support
+  - Optional icon integration
+  
 
 ### `/src/context`
 Application state management:
@@ -137,9 +150,19 @@ Utility functions and type definitions:
   - Dark and light theme presets
   - Theme type definitions
   - Color variables for UI components
-  - Component-specific theme variables (loader, buttons, etc.)
+  - Component-specific theme variables
+  - Dynamic theme switching logic
+  - CSS variable management
+  - Custom property definitions
+  - Gradient and shadow configurations
 - `webSearch.ts`: Web search functionality
 - `websocket.ts`: WebSocket connection management
+  - Real-time communication handling
+  - Connection state management
+  - Message serialization/deserialization
+  - Reconnection logic
+  - Event handling system
+  - Error recovery mechanisms
 - `websplatUtils.ts`: General utility functions
 
 ## Component Dependencies and File Relationships
