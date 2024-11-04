@@ -125,7 +125,7 @@ const AITypewriterText: React.FC<TypewriterTextProps> = ({ message, index }) => 
       {displayState.text || message.content.charAt(0)}
       {!displayState.isComplete && (
         <span 
-          className="inline-block w-0.5 h-8 md:h-10 ml-1 animate-cursor-blink bg-orange-300"
+          className="inline-block w-0.5 h-4 md:h-5 ml-1 animate-cursor-blink bg-blue-300"
           style={{ verticalAlign: 'middle' }}
         />
       )}

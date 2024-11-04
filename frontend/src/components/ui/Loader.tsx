@@ -18,7 +18,7 @@ const Loader: React.FC<LoaderProps> = ({ isThinking }) => {
 
 const StyledWrapper = styled.div<{ $isThinking: boolean; theme: any }>`
   position: absolute;
-  bottom: -2px;
+  bottom: 0px;
   left: 1px;
   width: 15px; 
   height: 15px; 
