@@ -18,10 +18,10 @@ const Loader: React.FC<LoaderProps> = ({ isThinking }) => {
 
 const StyledWrapper = styled.div<{ $isThinking: boolean; theme: any }>`
   position: absolute;
-  bottom: -5px;
+  bottom: -2px;
   left: 1px;
-  width: 20px;
-  height: 20px;
+  width: 15px; 
+  height: 15px; 
   z-index: 10;
 
   @keyframes spin {

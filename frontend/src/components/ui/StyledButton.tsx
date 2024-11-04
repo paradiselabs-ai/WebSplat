@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { useTheme } from '../../context/ThemeContext';
 
 interface StyledButtonProps {
   onClick?: () => void;
@@ -8,8 +9,10 @@ interface StyledButtonProps {
 }
 
 const StyledButton: React.FC<StyledButtonProps> = ({ onClick, children, className }) => {
+  const { theme } = useTheme();
+  
   return (
-    <StyledWrapper>
+    <StyledWrapper theme={theme}>
       <button onClick={onClick} className={className}>
         {children}
       </button>
@@ -17,25 +20,27 @@ const StyledButton: React.FC<StyledButtonProps> = ({ onClick, children, classNam
   );
 }
 
-const StyledWrapper = styled.div`
+const StyledWrapper = styled.div<{ theme: any }>`
   button {
-    color: #090909;
+    color: ${props => props.theme.styledButtonText};
     padding: 0.7em 1.7em;
     font-size: 18px;
     border-radius: 0.5em;
-    background: #e8e8e8;
+    background: ${props => props.theme.styledButtonBg};
     cursor: pointer;
-    border: 1px solid #e8e8e8;
+    border: 1px solid ${props => props.theme.styledButtonBorder};
     transition: all 0.3s;
-    box-shadow: 6px 6px 12px #c5c5c5, -6px -6px 12px #ffffff;
+    box-shadow: 6px 6px 12px ${props => props.theme.styledButtonShadowDark},
+               -6px -6px 12px ${props => props.theme.styledButtonShadowLight};
   }
 
   button:hover {
-    border: 1px solid white;
+    border: 1px solid ${props => props.theme.styledButtonHoverBorder};
   }
 
   button:active {
-    box-shadow: 4px 4px 12px #c5c5c5, -4px -4px 12px #ffffff;
+    box-shadow: 4px 4px 12px ${props => props.theme.styledButtonActiveShadowDark},
+               -4px -4px 12px ${props => props.theme.styledButtonActiveShadowLight};
   }
 `;
 

@@ -51,6 +51,16 @@ export const darkTheme = {
     progressGradientEnd: '#5B9ECA',    // Light blue
     progressTrackBg: '#16191F',        // Slightly lighter than background
     progressTextColor: '#E8ECF3',      // Slightly blue-tinted white
+
+    // StyledButton Colors - New theme variables
+    styledButtonText: '#FFFFFF',
+    styledButtonBg: '#2A2F38',
+    styledButtonBorder: '#485263',
+    styledButtonShadowDark: '#16191F',
+    styledButtonShadowLight: '#3D4452',
+    styledButtonHoverBorder: '#5B9ECA',
+    styledButtonActiveShadowDark: '#1A1D24',
+    styledButtonActiveShadowLight: '#343B47'
 };
 
 export const lightTheme = {
@@ -106,6 +116,16 @@ export const lightTheme = {
     progressGradientEnd: '#FFA500',  
     progressTrackBg: '#E5E5E5',
     progressTextColor: '#333333',
+
+    // StyledButton Colors - New theme variables
+    styledButtonText: '#090909',
+    styledButtonBg: '#e8e8e8',
+    styledButtonBorder: '#e8e8e8',
+    styledButtonShadowDark: '#c5c5c5',
+    styledButtonShadowLight: '#ffffff',
+    styledButtonHoverBorder: '#ffffff',
+    styledButtonActiveShadowDark: '#d1d1d1',
+    styledButtonActiveShadowLight: '#ffffff'
 };
 
 export type Theme = typeof darkTheme;
