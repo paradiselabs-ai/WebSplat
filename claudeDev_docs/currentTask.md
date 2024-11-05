@@ -103,6 +103,64 @@ Implement New User Interface and Agent Workflow with Live TSX Preview (MVP for H
    - [ ] Test preview updates
    - [ ] Verify memory usage
 
+## v0 Demo Issues List
+
+### 1. Message Handling (High Priority)
+- [ ] Fix double message addition in AppContext.tsx
+  - Messages being added both in handleSendMessage and through WebSocket
+  - Need to consolidate message addition to WebSocket only
+- [ ] Fix typing indicator race condition
+  - setIsTyping and setCurrentAiMessage called in multiple places
+  - Need to centralize typing state management
+- [ ] Implement message ordering guarantees
+  - Ensure WebSocket messages and HTTP responses stay in sync
+  - Add message sequence tracking
+
+### 2. Real-time Preview System (High Priority)
+- [ ] Add preview loading states
+  - Show loading indicator while preview is being generated
+  - Add error state for failed previews
+  - Implement fallback content
+- [ ] Fix preview panel transitions
+  - Smooth transitions between preview states
+  - Better error recovery for failed previews
+- [ ] Improve preview responsiveness
+  - Faster preview updates
+  - Better mobile/desktop switching
+
+### 3. WebSocket Connection (Medium Priority)
+- [ ] Add connection status indicator
+  - Visual indicator of WebSocket connection state
+  - User-friendly connection status messages
+- [ ] Implement visible reconnection feedback
+  - Show reconnection attempts to user
+  - Provide manual reconnect option
+- [ ] Add connection error recovery
+  - Graceful handling of connection losses
+  - Automatic state recovery on reconnect
+
+### 4. State Management (Medium Priority)
+- [ ] Remove unused generatedHtml state
+  - Clean up AppContext state
+  - Update related components
+- [ ] Fix inconsistent state updates
+  - Consolidate state updates between HTTP and WebSocket
+  - Implement proper state synchronization
+- [ ] Add proper error state handling
+  - Propagate errors to UI
+  - Show user-friendly error messages
+
+### 5. Workspace Management (Low Priority)
+- [ ] Implement workspace cleanup
+  - Add cleanup of old workspaces
+  - Implement workspace expiration
+- [ ] Add workspace persistence
+  - Save workspace state between reloads
+  - Add workspace recovery
+- [ ] Add workspace sharing
+  - Implement workspace_id in URL
+  - Add workspace state sharing
+
 ## Urgent Steps
 1. Run complete integration tests
 2. Verify all WebSocket functionality
