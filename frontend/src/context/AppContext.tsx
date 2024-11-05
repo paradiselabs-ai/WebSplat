@@ -46,6 +46,7 @@ interface AppContextValue {
     workspaceId: string | null;
     previewOpen: boolean;
     overallProgress: number;
+    hasError: boolean;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -79,6 +80,7 @@ const AppProvider = ({ children }: AppContextProps) => {
     const [previewOpen, setPreviewOpen] = useState<boolean>(false);
     const [overallProgress, setOverallProgress] = useState<number>(0);
     const [cursorPosition, setCursorPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+    const [hasError, setHasError] = useState<boolean>(false);
 
     // Initialize WebSocket connection
     const socket = useWebSocket(workspaceId, {
@@ -95,6 +97,7 @@ const AppProvider = ({ children }: AppContextProps) => {
     useEffect(() => {
       if (socket) {
         console.log('WebSocket connected for workspace:', workspaceId);
+        setHasError(false);
       }
     }, [socket, workspaceId]);
 
@@ -124,13 +127,13 @@ const AppProvider = ({ children }: AppContextProps) => {
 
     const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        if (inputMessage.trim() === '') return;
+        if (inputMessage.trim() === '' || isSending) return;
 
         console.log('Sending message:', inputMessage);
         console.log('Current isFirstInteraction:', isFirstInteraction);
 
         setIsSending(true);
-        setMessages(prev => [...prev, { role: 'user', content: inputMessage }]);
+        setHasError(false);
         
         if (isFirstInteraction) {
           console.log('Setting isFirstInteraction to false');
@@ -150,13 +153,6 @@ const AppProvider = ({ children }: AppContextProps) => {
           if (response.data.workspace_id) {
             setWorkspaceId(response.data.workspace_id);
           }
-
-          // Add AI response to messages
-          setMessages(prev => {
-            console.log('Current messages:', prev);
-            console.log('Adding AI response:', response.data.message);
-            return [...prev, { role: 'ai', content: response.data.message }];
-          });
 
           // Update generated HTML if TSX preview is present
           if (response.data.tsx_preview) {
@@ -178,15 +174,11 @@ const AppProvider = ({ children }: AppContextProps) => {
           }
 
           setInputMessage('');
-          setIsTyping(false);
-          setCurrentAiMessage('');
 
         } catch (error) {
           console.error('Error sending message:', error);
-          setMessages(prev => [...prev, {
-            role: 'ai',
-            content: 'Sorry, there was an error processing your request. Please try again.'
-          }]);
+          setHasError(true);
+          // Let WebSocket handle error message display
         } finally {
           setIsSending(false);
         }
@@ -274,6 +266,7 @@ const AppProvider = ({ children }: AppContextProps) => {
             workspaceId,
             previewOpen,
             overallProgress,
+            hasError,
           }}
         >
           {children}

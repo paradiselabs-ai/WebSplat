@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Message } from '../utils/Message';
 import { AgentView } from '../utils/AgentView';
 import TypewriterText from './TypewriterText';
-import { ArrowUp, PanelRightOpen } from 'lucide-react';
+import { ArrowUp, PanelRightOpen, AlertCircle } from 'lucide-react';
 
 interface MainContentProps {
   messages: Message[];
@@ -28,6 +28,7 @@ interface MainContentProps {
   requestStrategyExplanation: (strategyType: string) => void;
   isSending: boolean;
   workspaceId: string | null;
+  hasError: boolean;
 }
 
 const MainContent: React.FC<MainContentProps> = ({
@@ -48,6 +49,7 @@ const MainContent: React.FC<MainContentProps> = ({
   requestProgressReport,
   requestStrategyExplanation,
   isSending,
+  hasError,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -86,6 +88,14 @@ const MainContent: React.FC<MainContentProps> = ({
                         <p className="font-tiempos text-base">{currentAiMessage}</p>
                       </div>
                     )}
+                    {hasError && (
+                      <div className="mb-4 bg-[#3B2626] text-[#F5A9A9] p-3 rounded-2xl flex items-center space-x-2">
+                        <AlertCircle className="h-5 w-5" />
+                        <p className="font-tiempos text-base">
+                          There was an error processing your request. Please try again.
+                        </p>
+                      </div>
+                    )}
                     <div ref={messagesEndRef} />
                   </div>
                 </ScrollArea>
@@ -107,7 +117,7 @@ const MainContent: React.FC<MainContentProps> = ({
                     <input
                       type="text"
                       placeholder={isFirstInteraction ? "Message Eden" : "Reply to Eden..."}
-                      className="w-full bg-[#31312E] text-[#E5E5E2] rounded-full pl-4 pr-12 py-2 focus:ring-2 focus:ring-[#444444] focus:border-transparent placeholder-[#A6A39A]"
+                      className={`w-full bg-[#31312E] text-[#E5E5E2] rounded-full pl-4 pr-12 py-2 focus:ring-2 focus:ring-[#444444] focus:border-transparent placeholder-[#A6A39A] ${hasError ? 'ring-2 ring-[#F5A9A9]' : ''}`}
                       value={inputMessage}
                       onChange={(e) => setInputMessage(e.target.value)}
                     />

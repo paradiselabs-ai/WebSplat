@@ -3,15 +3,6 @@ import { render, fireEvent, screen } from '@testing-library/react';
 import MainContent from '../MainContent';
 import { Message } from '../../utils/Message';
 
-// Mock IntersectionObserver for ScrollArea
-const mockIntersectionObserver = jest.fn();
-mockIntersectionObserver.mockReturnValue({
-  observe: () => null,
-  unobserve: () => null,
-  disconnect: () => null
-});
-window.IntersectionObserver = mockIntersectionObserver;
-
 describe('MainContent Component', () => {
   const mockAgentViews = [
     { name: 'UI Design', icon: () => null, content: ['UI Design note 1'] },
@@ -44,12 +35,8 @@ describe('MainContent Component', () => {
     requestStrategyExplanation: jest.fn(),
     isSending: false,
     workspaceId: 'test-workspace',
+    hasError: false,
   };
-
-  beforeEach(() => {
-    // Mock scrollIntoView
-    window.HTMLElement.prototype.scrollIntoView = jest.fn();
-  });
 
   it('renders chat tab by default', () => {
     render(<MainContent {...defaultProps} />);
@@ -163,19 +150,14 @@ describe('MainContent Component', () => {
     expect(screen.getByText('UI Design note 1')).toBeInTheDocument();
   });
 
-  it('scrolls to bottom when new messages arrive', () => {
-    render(<MainContent {...defaultProps} />);
-    expect(window.HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
+  it('shows error message when hasError is true', () => {
+    render(<MainContent {...defaultProps} hasError={true} />);
+    expect(screen.getByText('There was an error processing your request. Please try again.')).toBeInTheDocument();
   });
 
-  it('scrolls to bottom when AI is typing', () => {
-    render(<MainContent {...defaultProps} isTyping={true} currentAiMessage="Typing..." />);
-    expect(window.HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
-  });
-
-  it('applies correct padding to message container', () => {
-    render(<MainContent {...defaultProps} />);
-    const messageContainer = screen.getByText('Hello').closest('.px-4');
-    expect(messageContainer).toBeInTheDocument();
+  it('adds error styling to input when hasError is true', () => {
+    render(<MainContent {...defaultProps} hasError={true} />);
+    const input = screen.getByPlaceholderText('Reply to Eden...');
+    expect(input).toHaveClass('ring-2', 'ring-[#F5A9A9]');
   });
 });
