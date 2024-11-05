@@ -45,6 +45,7 @@ interface AppContextValue {
     isAutonomySliderVisible: boolean;
     workspaceId: string | null;
     previewOpen: boolean;
+    overallProgress: number;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -79,6 +80,7 @@ const AppProvider = ({ children }: AppContextProps) => {
     const [overallProgress, setOverallProgress] = useState<number>(0);
     const [cursorPosition, setCursorPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
+    // Initialize WebSocket connection
     const socket = useWebSocket(workspaceId, {
       setGeneratedHtml,
       setOverallProgress,
@@ -87,7 +89,14 @@ const AppProvider = ({ children }: AppContextProps) => {
       setMessages,
       setIsTyping,
       setCurrentAiMessage,
-    }, agentViews, messages);
+    });
+
+    // Log WebSocket status changes
+    useEffect(() => {
+      if (socket) {
+        console.log('WebSocket connected for workspace:', workspaceId);
+      }
+    }, [socket, workspaceId]);
 
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
@@ -117,26 +126,59 @@ const AppProvider = ({ children }: AppContextProps) => {
         e.preventDefault();
         if (inputMessage.trim() === '') return;
 
+        console.log('Sending message:', inputMessage);
+        console.log('Current isFirstInteraction:', isFirstInteraction);
+
         setIsSending(true);
         setMessages(prev => [...prev, { role: 'user', content: inputMessage }]);
         
         if (isFirstInteraction) {
+          console.log('Setting isFirstInteraction to false');
           setIsFirstInteraction(false);
         }
 
         try {
+          console.log('Making API request...');
           const response = await axios.post('http://localhost:8000/consult', {
             message: inputMessage,
             autonomy_level: autonomyLevel,
             workspace_id: workspaceId
           });
 
+          console.log('API response:', response.data);
+
           if (response.data.workspace_id) {
             setWorkspaceId(response.data.workspace_id);
           }
 
+          // Add AI response to messages
+          setMessages(prev => {
+            console.log('Current messages:', prev);
+            console.log('Adding AI response:', response.data.message);
+            return [...prev, { role: 'ai', content: response.data.message }];
+          });
+
+          // Update generated HTML if TSX preview is present
+          if (response.data.tsx_preview) {
+            console.log('Setting generated HTML:', response.data.tsx_preview);
+            setGeneratedHtml(response.data.tsx_preview);
+          }
+
+          // Update agent views based on shared knowledge
+          if (response.data.shared_knowledge) {
+            console.log('Updating agent views with:', response.data.shared_knowledge);
+            const updatedAgentViews = agentViews.map(view => {
+              const knowledge = response.data.shared_knowledge[view.name];
+              return {
+                ...view,
+                content: knowledge ? [...view.content, knowledge].flat() : view.content
+              };
+            });
+            setAgentViews(updatedAgentViews);
+          }
+
           setInputMessage('');
-          setIsTyping(true);
+          setIsTyping(false);
           setCurrentAiMessage('');
 
         } catch (error) {
@@ -172,6 +214,10 @@ const AppProvider = ({ children }: AppContextProps) => {
             params: { workspace_id: workspaceId }
           });
           setProgressReport(response.data.report);
+          // Update overall progress based on the report
+          if (response.data.progress) {
+            setOverallProgress(response.data.progress);
+          }
         } catch (error) {
           console.error('Error fetching progress report:', error);
           setProgressReport('Error fetching progress report. Please try again.');
@@ -227,6 +273,7 @@ const AppProvider = ({ children }: AppContextProps) => {
             setAutonomyLevel,
             workspaceId,
             previewOpen,
+            overallProgress,
           }}
         >
           {children}

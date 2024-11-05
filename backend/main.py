@@ -1,12 +1,12 @@
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, Dict, Any, List
-from ai_integration import AIIntegration
-from workspace_manager import WorkspaceManager
-from autogen_agents import create_website, generate_progress_report, explain_strategy, set_autonomy_level
+from .ai_integration import AIIntegration
+from .workspace_manager import WorkspaceManager
+from .autogen_agents import consultation_agent, FUNCTION_MAP, set_autonomy_level, generate_progress_report, explain_strategy
 import asyncio
 import logging
 import traceback
@@ -14,17 +14,18 @@ import json
 import os
 
 app = FastAPI()
-ai = AIIntegration()
-workspace_manager = WorkspaceManager(base_path="./workspaces")
 
-# Set up CORS
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["*"]
 )
+
+ai = AIIntegration()
+workspace_manager = WorkspaceManager(base_path="./workspaces")
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -69,52 +70,6 @@ KNOWLEDGE_CATEGORIES = {
     "Deployment": ["deployment", "hosting", "server", "production", "launch", "release"]
 }
 
-async def generate_tsx_preview(message: str, workspace_id: str) -> Dict[str, str]:
-    consultation_prompt = f"""
-    You are a helpful AI assistant guiding a user through the process of creating a website. The user has requested: "{message}"
-    Provide a friendly and informative response to the user, explaining the next steps in creating their website.
-    Your response should be conversational and encouraging, similar to how Vercel's v0 AI would interact.
-    Focus on UI/UX considerations and design elements that will enhance the user experience.
-    """
-    
-    tsx_prompt = f"""
-    Create a React TSX component based on the following description:
-    {message}
-    
-    The component should:
-    1. Start with 'import React from "react";' as the first line
-    2. Use modern React practices (functional components, hooks)
-    3. Include basic styling using CSS-in-JS (styled-components syntax)
-    4. Be responsive and accessible
-    5. Include placeholder data where appropriate
-    6. Be a complete, working component that can be rendered
-
-    Provide only the TSX code, without any explanations or markdown formatting.
-    The first line MUST be 'import React from "react";'
-    """
-    
-    consultation_response = await asyncio.to_thread(ai.generate_text, consultation_prompt, 'gemini', 80)
-    tsx_code = await asyncio.to_thread(ai.generate_text, tsx_prompt, 'gemini', 80)
-    
-    # Ensure React import is present
-    if not tsx_code.strip().startswith('import React'):
-        tsx_code = 'import React from "react";\n' + tsx_code.strip()
-    
-    # Save the TSX code to the workspace
-    workspace_manager.write_file(workspace_id, "App.tsx", tsx_code.strip())
-    
-    # Send real-time update to the connected client
-    if workspace_id in active_connections:
-        await active_connections[workspace_id].send_json({
-            "type": "preview_update",
-            "content": tsx_code.strip()
-        })
-    
-    return {
-        "consultation": consultation_response,
-        "tsx_preview": tsx_code.strip()
-    }
-
 async def send_websocket_update(workspace_id: str, update_type: str, content: Any):
     if workspace_id in active_connections:
         await active_connections[workspace_id].send_json({
@@ -137,41 +92,124 @@ async def websocket_endpoint(websocket: WebSocket, workspace_id: str):
 async def options_consult():
     return {"message": "OK"}
 
+def create_html_wrapper(tsx_code: str, component_name: str) -> str:
+    return f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSplat Preview</title>
+    <script src="https://unpkg.com/react@17/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <style>
+        body {{ margin: 0; padding: 0; }}
+        #root {{ height: 100vh; }}
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        {tsx_code}
+
+        ReactDOM.render(
+            <{component_name} />,
+            document.getElementById('root')
+        );
+    </script>
+</body>
+</html>
+"""
+
 @app.post("/consult", response_model=ConsultationResponse)
 async def consult(request: ConsultationRequest):
     try:
         workspace_id = workspace_manager.create_workspace()
         logging.info(f"Created new workspace: {workspace_id}")
         
-        # Use create_website from autogen_agents
-        result = await asyncio.to_thread(create_website, request.message, request.autonomy_level)
+        # Set autonomy level
+        set_autonomy_level(request.autonomy_level)
         
-        generated_content = await generate_tsx_preview(request.message, workspace_id)
+        # Get initial response from consultation agent
+        consultation_prompt = (
+            f"You are the primary interface with the user, responsible for guiding them through the website creation process.\n"
+            f"The user has requested: \"{request.message}\"\n\n"
+            f"Provide a friendly and informative response, explaining the next steps in creating their website.\n"
+            f"If the request involves UI changes, include a TSX component design.\n"
+            f"Your response should be conversational and encouraging, similar to how Vercel's v0 AI would interact.\n\n"
+            f"If you need to generate code, clearly indicate it with TSX_START and TSX_END markers."
+        )
+        
+        response = consultation_agent.generate_reply(
+            messages=[{"role": "user", "content": consultation_prompt}],
+            sender=None,
+            config={}
+        )
+
+        # Send user message through WebSocket
+        if workspace_id in active_connections:
+            await active_connections[workspace_id].send_json({
+                "type": "chat_message",
+                "role": "user",
+                "content": request.message
+            })
+            # Send AI response through WebSocket
+            await active_connections[workspace_id].send_json({
+                "type": "chat_message",
+                "role": "ai",
+                "content": response,
+                "agent": "consultation_agent"
+            })
+        
+        # Extract TSX code if present
+        tsx_preview = None
+        if "TSX_START" in response and "TSX_END" in response:
+            tsx_start = response.index("TSX_START") + len("TSX_START")
+            tsx_end = response.index("TSX_END")
+            tsx_preview = response[tsx_start:tsx_end].strip()
+            
+            # Save TSX code to workspace if present
+            if tsx_preview:
+                # Extract component name from TSX code
+                component_name = "PreviewComponent"  # Default name
+                if "function" in tsx_preview:
+                    try:
+                        component_name = tsx_preview.split("function ")[1].split("(")[0].strip()
+                    except:
+                        pass
+                elif "const" in tsx_preview:
+                    try:
+                        component_name = tsx_preview.split("const ")[1].split("=")[0].strip()
+                    except:
+                        pass
+
+                # Save the TSX component
+                workspace_manager.write_file(workspace_id, "App.tsx", tsx_preview)
+                
+                # Create and save the HTML wrapper
+                html_content = create_html_wrapper(tsx_preview, component_name)
+                workspace_manager.write_file(workspace_id, "index.html", html_content)
+                
+                await send_websocket_update(workspace_id, "preview_update", tsx_preview)
         
         # Update shared knowledge based on the response
-        consultation_text = generated_content["consultation"].lower()
+        consultation_text = response.lower()
         for category, keywords in KNOWLEDGE_CATEGORIES.items():
-            # Check if any keyword from the category is in the consultation text
             if any(keyword.lower() in consultation_text for keyword in keywords):
-                ai.update_shared_knowledge(category, generated_content["consultation"])
+                ai.update_shared_knowledge(category, response)
                 await send_websocket_update(workspace_id, f"knowledge_update_{category}", ai.shared_knowledge[category])
         
-        # Also update UI Design knowledge if the message is about UI changes
-        if any(keyword in request.message.lower() for keyword in KNOWLEDGE_CATEGORIES["UI Design"]):
-            ai.update_shared_knowledge("UI Design", f"User requested UI update: {request.message}")
-        
-        await send_websocket_update(workspace_id, "preview_update", result.get("tsx_preview", generated_content["tsx_preview"]))
-        await send_websocket_update(workspace_id, "progress_update", result.get("progress", 0))
-        
-        response = ConsultationResponse(
-            message=result["message"], 
-            tsx_preview=result.get("tsx_preview", generated_content["tsx_preview"]),
+        response_obj = ConsultationResponse(
+            message=response,
+            tsx_preview=tsx_preview,
             shared_knowledge=ai.shared_knowledge,
-            compiled_results=result.get("compiled_results"),
             workspace_id=workspace_id
         )
+        
         logging.info(f"Consultation response created for workspace: {workspace_id}")
-        return response
+        return response_obj
+        
     except Exception as e:
         logging.error(f"Error in consult endpoint: {e}")
         logging.error(f"Traceback: {traceback.format_exc()}")

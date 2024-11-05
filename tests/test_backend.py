@@ -101,7 +101,10 @@ def test_explain_strategy_endpoint():
 def test_websocket_connection():
     ws = websocket.WebSocket()
     try:
-        ws.connect(f"ws://localhost:8000/ws/{workspace_id}")
+        ws.connect(
+            f"ws://localhost:8000/ws/{workspace_id}",
+            header=["Origin: http://localhost:3000"]
+        )
         assert ws.connected, "WebSocket connection failed"
     except Exception as e:
         pytest.fail(f"WebSocket connection test failed: {str(e)}")

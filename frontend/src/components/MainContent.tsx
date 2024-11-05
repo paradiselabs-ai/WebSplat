@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { Button } from "./ui/button";
 import { ScrollArea } from "./ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Message } from '../utils/Message';
+import { AgentView } from '../utils/AgentView';
 import TypewriterText from './TypewriterText';
 import { ArrowUp, PanelRightOpen } from 'lucide-react';
 
@@ -12,11 +13,10 @@ interface MainContentProps {
   autonomyLevel: number;
   previewMode: 'desktop' | 'mobile';
   activeView: string;
-  generatedHtml: string;
   isFirstInteraction: boolean;
   isTyping: boolean;
   currentAiMessage: string;
-  agentViews: any[];
+  agentViews: AgentView[];
   progressReport: string;
   strategyExplanation: string;
   handleSendMessage: (e: React.FormEvent<HTMLFormElement>) => void;
@@ -49,6 +49,14 @@ const MainContent: React.FC<MainContentProps> = ({
   requestStrategyExplanation,
   isSending,
 }) => {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, currentAiMessage]);
+
   return (
     <main className={`flex-1 flex flex-col overflow-hidden bg-[#2C2B28] text-[#999999] transition-all duration-300 ease-in-out`}>
       <Tabs value={activeView} onValueChange={setActiveView} className="flex-1 flex flex-col">
@@ -61,27 +69,32 @@ const MainContent: React.FC<MainContentProps> = ({
         </TabsList>
 
         <TabsContent value="chat" className="flex-1 flex flex-col">
-          <div className="flex-1 flex justify-center items-center">
-            <div className="w-3/5 max-w-3xl">
-              <ScrollArea className={`h-[calc(100vh-10rem)] mt-4 ${isFirstInteraction ? 'hidden' : ''}`}>
-                {messages.map((message: Message, index: number) => (
-                  <div key={index} className={`mb-4 ${message.role === 'ai' ? 'bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl' : 'bg-[#21201C] text-[#E5E5E2] p-3 rounded-2xl'}`}>
-                    <p className={message.role === 'ai' ? 'font-tiempos text-base' : 'font-styrene text-[15px]'}>
-                      {message.content}
-                    </p>
+          <div className={`flex-1 ${isFirstInteraction ? 'flex justify-center items-center' : ''}`}>
+            <div className="w-3/5 max-w-3xl mx-auto">
+              {!isFirstInteraction && (
+                <ScrollArea className="h-[calc(100vh-10rem)] mt-4">
+                  <div className="px-4">
+                    {messages.map((message: Message, index: number) => (
+                      <div key={index} className={`mb-4 ${message.role === 'ai' ? 'bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl' : 'bg-[#21201C] text-[#E5E5E2] p-3 rounded-2xl'}`}>
+                        <p className={message.role === 'ai' ? 'font-tiempos text-base' : 'font-styrene text-[15px]'}>
+                          {message.content}
+                        </p>
+                      </div>
+                    ))}
+                    {isTyping && (
+                      <div className="mb-4 bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl">
+                        <p className="font-tiempos text-base">{currentAiMessage}</p>
+                      </div>
+                    )}
+                    <div ref={messagesEndRef} />
                   </div>
-                ))}
-                {isTyping && (
-                  <div className="mb-4 bg-[#31312E] text-[#F5F4EF] p-3 rounded-2xl">
-                    <p className="font-tiempos text-base">{currentAiMessage}</p>
-                  </div>
-                )}
-              </ScrollArea>
+                </ScrollArea>
+              )}
               <div 
                 className={`relative transition-all duration-1000 ease-in-out ${
                   isFirstInteraction 
                     ? 'absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2' 
-                    : 'transform translate-y-0'
+                    : 'mt-4'
                 }`}
               >
                 {isFirstInteraction && (

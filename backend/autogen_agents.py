@@ -86,26 +86,74 @@ def set_autonomy_level(level: int):
 
 def openrouter_call(prompt: str, model: str) -> str:
     try:
+        logging.info(f"Making OpenRouter API call to model: {model}")
         headers = {
             "Authorization": f"Bearer {openrouter_api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://websplat.ai",
+            "X-Title": "WebSplat AI"
         }
+        
+        # Optimize prompt by removing unnecessary whitespace while preserving structure
+        prompt_lines = prompt.split('\n')
+        optimized_lines = [' '.join(line.split()) for line in prompt_lines if line.strip()]
+        prompt = '\n'.join(optimized_lines)
+        
+        # Configure request with token management
         data = {
             "model": model,
-            "messages": [{"role": "user", "content": prompt}]
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": 2000,  # Limit response length
+            "temperature": 0.7,   # Control response randomness
+            "top_p": 0.9,        # Focus on more likely tokens
+            "frequency_penalty": 0.0,  # Reduce repetition
+            "presence_penalty": 0.0    # Encourage topic focus
         }
+        
+        logging.info(f"OpenRouter request headers: {headers}")
+        logging.info(f"OpenRouter request data: {data}")
+        
         response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
-        response.raise_for_status()
-        return response.json()['choices'][0]['message']['content']
+        logging.info(f"OpenRouter response status: {response.status_code}")
+        logging.info(f"OpenRouter response: {response.text}")
+        
+        response_json = response.json()
+        if 'error' in response_json:
+            error_message = response_json['error'].get('message', 'Unknown error')
+            logging.error(f"OpenRouter API error: {error_message}")
+            
+            if 'max_tokens limit exceeded' in error_message:
+                # Try with reduced token limits
+                data["max_tokens"] = 1000
+                # Keep system message but reduce user message length if needed
+                if len(prompt) > 3000:  # Approximate token limit
+                    user_lines = [line for line in prompt_lines if "user has requested:" in line.lower()]
+                    system_lines = [line for line in prompt_lines if "system message:" in line.lower()]
+                    other_lines = [line for line in prompt_lines if "generate" in line.lower() or "create" in line.lower()]
+                    reduced_prompt = '\n'.join(system_lines + user_lines + other_lines[:2])
+                    data["messages"][0]["content"] = reduced_prompt
+                
+                response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
+                response_json = response.json()
+                if 'choices' in response_json:
+                    return response_json['choices'][0]['message']['content']
+            
+            return f"I apologize, but I encountered an error: {error_message}. Please try breaking your request into smaller parts."
+        
+        return response_json['choices'][0]['message']['content']
     except Exception as e:
         logging.error(f"OpenRouter API call failed: {e}")
-        return f"OpenRouter API call failed: {str(e)}"
+        logging.error(f"Error details: {traceback.format_exc()}")
+        return "I apologize, but I encountered an error. Please try again with a simpler request."
 
 def o1_mini_call(prompt: str) -> str:
     return openrouter_call(prompt, "mistralai/mistral-7b-instruct")
 
 def o1_call(prompt: str) -> str:
     return openrouter_call(prompt, "openai/gpt-4")
+
+def claude_opus_call(prompt: str) -> str:
+    return openrouter_call(prompt, "anthropic/claude-3-opus:beta")
 
 def claude_vertex_call(prompt: str) -> str:
     if not anthropic_client:
@@ -164,16 +212,28 @@ FUNCTION_MAP = {
     "o1_call": o1_call,
     "o1_mini_call": o1_mini_call,
     "claude_vertex_call": claude_vertex_call,
+    "claude_opus_call": claude_opus_call,
     "vertex_ai_call": vertex_ai_call,
     "perplexity_call": perplexity_call,
     "web_search": web_search
 }
 
 def is_termination_msg(x):
-    if isinstance(x, dict):
-        return x.get("content", "").rstrip().endswith("TERMINATE")
-    elif isinstance(x, str):
-        pass
+    """Check if a message indicates termination of the conversation."""
+    try:
+        if isinstance(x, dict):
+            content = x.get("content", "")
+            if isinstance(content, str):
+                return content.rstrip().endswith("TERMINATE")
+            elif isinstance(content, list):
+                return any(isinstance(item, str) and item.rstrip().endswith("TERMINATE") for item in content)
+        elif isinstance(x, str):
+            return x.rstrip().endswith("TERMINATE")
+        return False
+    except Exception as e:
+        logging.error(f"Error in is_termination_msg: {e}")
+        return False
+
 class EnhancedAssistantAgent(AssistantAgent):
     def __init__(self, name: str, system_message: str, llm_config: Dict[str, Any]):
         # Convert the function to a string identifier
@@ -323,8 +383,23 @@ lead_developer = EnhancedAssistantAgent(
 
 consultation_agent = EnhancedAssistantAgent(
     name="Consultation_Agent",
-    system_message="You are the primary interface with the user. Gather requirements, provide updates on the website creation process, and communicate major milestones in natural language.",
-    llm_config={"function": claude_vertex_call, "model": "claude-3-sonnet-20240229"}
+    system_message="""You are the primary interface with the user, responsible for guiding them through the website creation process.
+    When the user requests website changes or creation:
+    1. First understand their requirements
+    2. If UI changes are needed, generate a TSX component (wrap the code with TSX_START and TSX_END markers)
+    3. Provide clear, friendly explanations of what you're doing
+    4. Only delegate to other agents when specifically needed for specialized tasks
+    
+    Your responses should be conversational and encouraging, similar to Vercel's v0 AI.
+    Always maintain a helpful and professional tone.
+    
+    When generating TSX code:
+    - Start with 'import React from "react";'
+    - Use modern React practices
+    - Include basic styling
+    - Make components responsive
+    - Wrap the code with TSX_START and TSX_END markers""",
+    llm_config={"function": claude_opus_call, "model": "anthropic/claude-3-opus:beta"}
 )
 
 user_content_manager = EnhancedAssistantAgent(
@@ -459,13 +534,13 @@ def create_website(user_requirements: str, autonomy_level: int) -> Dict[str, Any
 
 def extract_consultation_response(messages: list) -> str:
     for message in reversed(messages):
-        if message["sender"] == "Consultation_Agent":
+        if message.get("name") == "Consultation_Agent":
             return message["content"]
     return "No consultation response available."
 
 def extract_tsx_preview(messages: list) -> str:
     for message in reversed(messages):
-        if message["sender"] == "Frontend_Designer" and "```tsx" in message["content"]:
+        if message.get("name") == "Frontend_Designer" and "```tsx" in message["content"]:
             start = message["content"].index("```tsx") + 6
             end = message["content"].index("```", start)
             return message["content"][start:end].strip()

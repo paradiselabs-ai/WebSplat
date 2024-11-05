@@ -1,4 +1,4 @@
-import React, { useState, ChangeEvent } from 'react';
+import React, { ChangeEvent } from 'react';
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
@@ -44,6 +44,7 @@ const Header: React.FC<HeaderProps> = ({
             />
           ) : (
             <div
+              data-testid="project-name-container"
               className="relative"
               onMouseEnter={() => setIsHoveringProjectName(true)}
               onMouseLeave={() => setIsHoveringProjectName(false)}

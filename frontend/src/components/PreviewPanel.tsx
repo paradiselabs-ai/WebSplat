@@ -6,7 +6,6 @@ import LivePreview from './LivePreview';
 interface PreviewPanelProps {
   previewOpen: boolean;
   previewMode: 'desktop' | 'mobile';
-  generatedHtml: string;
   workspaceId: string | null;
   togglePreview: () => void;
   setPreviewMode: (mode: 'desktop' | 'mobile') => void;
@@ -15,7 +14,6 @@ interface PreviewPanelProps {
 const PreviewPanel: React.FC<PreviewPanelProps> = ({
   previewOpen,
   previewMode,
-  generatedHtml,
   workspaceId,
   togglePreview,
   setPreviewMode,
@@ -50,7 +48,7 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({
         </div>
       </div>
       <div className="flex-1 p-4 overflow-auto h-[calc(100vh-3.5rem)]">
-        <LivePreview mode={previewMode} generatedHtml={generatedHtml} workspaceId={workspaceId} />
+        <LivePreview mode={previewMode} workspaceId={workspaceId} />
       </div>
       <div className="p-2 text-sm text-[#777777] text-center">
         Note: This preview updates live as the AI generates the website code.

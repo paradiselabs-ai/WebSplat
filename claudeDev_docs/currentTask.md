@@ -30,129 +30,105 @@ Implement New User Interface and Agent Workflow with Live TSX Preview (MVP for H
 11. [x] Update the backend to include a workspace for code generation and iteration
 12. [x] Implement basic real-time rendering system for the preview window
 13. [x] Update test files with additional logging and assertions
+14. [x] Split WebSplatInterface.tsx into modular components
+15. [x] Create comprehensive test files for all components
+16. [x] Update frontend test plan to reflect new component structure
+17. [x] Verify backend functionality with comprehensive testing
+18. [x] Map out integration points between frontend and backend
+19. [x] Fix WebSocket cleanup and reconnection logic
+20. [x] Add auto-scroll functionality to chat messages
+21. [x] Remove unused generatedHtml prop from components
+22. [x] Update tests to reflect recent changes
 
-## Urgent Steps (Less than 12 hours)
+## Integration Tasks (Priority Order)
 
-### Frontend Verification
-1. [ ] Verify all frontend components:
-   a. [ ] Test chat interface functionality
-   b. [ ] Verify autonomy level adjustment
-   c. [ ] Test all agent view tabs
-   d. [ ] Verify progress report generation
-   e. [ ] Test strategy explanation features
-   f. [ ] Verify real-time preview panel
-   g. [ ] Test project name editing
-2. [ ] Test frontend responsiveness:
-   a. [ ] Desktop layout
-   b. [ ] Tablet layout
-   c. [ ] Mobile layout
-3. [ ] Verify error handling:
-   a. [ ] Network error handling
-   b. [ ] Invalid input handling
-4. [ ] Test performance:
-   a. [ ] Initial load time
-   b. [ ] Interface responsiveness
-   c. [ ] Preview generation speed
+### 1. Core Integration Testing
+1. [ ] WebSocket Communication:
+   - [ ] Verify connection establishment
+   - [ ] Test message flow from frontend to backend
+   - [ ] Test real-time updates from backend to frontend
+   - [ ] Verify reconnection handling
+   - [ ] Test error recovery
 
-### Backend Issues
-1. [ ] Fix issues identified in backend tests:
-   a. [ ] Resolve missing workspace_id in consult endpoint response
-   b. [ ] Fix 404 errors in preview and serve endpoints
-   c. [ ] Address WebSocket connection 403 Forbidden error
-   d. [ ] Ensure shared knowledge is properly updated with testimonials
-2. [ ] Implement the Autogen multi-agent system for collaborative website creation
-3. [ ] Integrate GroundX RAG system for shared knowledge and information retrieval
-4. [ ] Set up a system for serving the generated websites on a local development server
-5. [ ] Improve the AI agents' collaboration and code generation process
-6. [ ] Implement WebSocket communication for real-time updates between frontend and backend
-7. [ ] Enhance the preview functionality to show a live render of the generated website
-8. [ ] Implement the consultation agent as a conduit between the user and the Autogen agents
-9. [ ] Set up the R&D agent to research and add information to the GroundX RAG system
-10. [ ] Implement monetization and SEO strategy generation and integration
+2. [ ] AI Consultation Flow:
+   - [ ] Test initial consultation prompt
+   - [ ] Verify AI response handling
+   - [ ] Test TSX code generation
+   - [ ] Verify typing indicators
+   - [ ] Test message threading
 
-### Deployment Preparation
-1. [ ] Environment Configuration:
-   a. [ ] Set up environment variables for development/production
-   b. [ ] Configure Google Cloud Secret Manager integration
-   c. [ ] Set up CORS for production
-2. [ ] Backend Preparation:
-   a. [ ] Implement comprehensive error handling
-   b. [ ] Set up request rate limiting
-   c. [ ] Add health check endpoints
-   d. [ ] Implement workspace cleanup
-3. [ ] Frontend Preparation:
-   a. [ ] Configure production build process
-   b. [ ] Implement error boundaries
-   c. [ ] Add loading states
-   d. [ ] Configure environment-based API URLs
+3. [ ] Preview System:
+   - [ ] Test TSX to HTML conversion
+   - [ ] Verify live preview updates
+   - [ ] Test preview mode switching
+   - [ ] Verify component rendering
+   - [ ] Test error states
 
-### Testing
-1. Run all tests and fix any issues:
-   a. [x] Run backend tests (python tests/test_backend.py)
-   b. [ ] Run frontend tests (python tests/test_frontend.py)
-   c. [ ] Run integration tests (python tests/test_integration.py)
-   d. [ ] Address any failures or errors in the tests
-2. [ ] Perform manual testing to ensure smooth user experience
-3. [ ] Update documentation based on final implementation
-4. [ ] Create and execute a test plan for the TSX preview feature and live rendering
+### 2. Knowledge Management
+1. [ ] Agent Views:
+   - [ ] Test knowledge accumulation
+   - [ ] Verify category updates
+   - [ ] Test strategy explanations
+   - [ ] Verify view switching
+   - [ ] Test content persistence
+
+2. [ ] Progress Tracking:
+   - [ ] Test progress calculations
+   - [ ] Verify report generation
+   - [ ] Test milestone tracking
+   - [ ] Verify autonomy level updates
+
+3. [ ] User Interaction:
+   - [ ] Test input handling
+   - [ ] Verify response timing
+   - [ ] Test error messages
+   - [ ] Verify loading states
+
+### 3. System Reliability
+1. [ ] Error Handling:
+   - [ ] Test network failures
+   - [ ] Verify error recovery
+   - [ ] Test timeout handling
+   - [ ] Verify error messages
+
+2. [ ] State Management:
+   - [ ] Test state persistence
+   - [ ] Verify data consistency
+   - [ ] Test view transitions
+   - [ ] Verify cleanup
+
+3. [ ] Performance:
+   - [ ] Test message rendering
+   - [ ] Verify scroll performance
+   - [ ] Test preview updates
+   - [ ] Verify memory usage
+
+## Urgent Steps
+1. Run complete integration tests
+2. Verify all WebSocket functionality
+3. Test consultation agent responses
+4. Verify preview system
+5. Test knowledge accumulation
+
+## Next Steps
+1. Complete remaining integration tasks
+2. Add final polish to UI/UX
+3. Run comprehensive testing
+4. Document integration points
+5. Plan deployment strategy
 
 ## Notes
-- DO NOT REMOVE OR ALTER ANY EXISTING FUNCTIONALITY OR CODE
-- Focus on integrating what we have as a working demo
-- Prioritize speed and functionality over perfection for this MVP
-- Ensure users can easily understand the direction agents are moving in each aspect
-- Allow users to provide feedback or change approach through the consulting agent
-- The actual code generation and iteration should occur on the backend, in a designated workspace within the project structure
-- The generated website should be served from the backend, allowing the user to view and interact with it in real-time through the preview window
-- Use the GroundX RAG system for maintaining shared knowledge and information retrieval
-- Implement the consultation agent as a conduit between the user and the Autogen multi-agent system
-- Ensure the backend can start a local development server to host the generated website for user preview
+- Focus on v0-like experience
+- Ensure solid local functionality
+- Test thoroughly
+- Document edge cases
+- Track performance
 
-## Next Steps (Post-MVP, if time allows)
-- Refine UI/UX based on initial testing
-- Expand functionality of additional views
-- Implement more comprehensive progress visualization
-- Conduct more thorough testing and bug fixes
-- Enhance TSX preview display (syntax highlighting, copy to clipboard)
-- Improve error handling
-- Optimize performance
-- Enhance AI agent system
-- Add user authentication
-- Implement collaborative features
-- Prepare for deployment on Google Cloud
-
-## Final Checklist Before Demo
-1. [ ] Verify all backend endpoints are functioning correctly
-2. [ ] Ensure frontend is successfully communicating with the backend
-3. [ ] Test all user interactions (chat, requesting progress reports, strategy explanations)
-4. [ ] Verify real-time updates in all views
-5. [ ] Check responsiveness and layout on different screen sizes
-6. [ ] Prepare a brief demonstration script highlighting key features
-7. [ ] Test the demo flow to ensure smooth presentation
-8. [ ] Review the MVP workflow charts with the team
-9. [ ] Test TSX preview feature thoroughly
-10. [ ] Verify the live rendering of the generated website in the preview window
-
-## Test Execution Steps
-1. Ensure both frontend and backend servers are running
-2. Run backend tests: `python tests/test_backend.py`
-3. Run frontend tests: `python tests/test_frontend.py`
-4. Run integration tests: `python tests/test_integration.py`
-5. Review test results and fix any issues
-6. Perform manual testing to catch any edge cases or user experience issues
-7. Update documentation if any changes were made during testing
-8. Execute TSX preview feature test plan
-9. Test the real-time collaboration of backend agents in generating website code
-10. Verify the serving and interaction with the generated website through the preview window
-
-## Current Focus
-1. Verify frontend functionality and components
-2. Fix issues identified in backend tests
-3. Implement the Autogen multi-agent system for collaborative website creation
-4. Integrate GroundX RAG system for shared knowledge and information retrieval
-5. Set up a system for serving the generated websites on a local development server
-6. Implement WebSocket communication for real-time updates
-7. Enhance the preview functionality to show a live render of the generated website
-8. Prepare deployment configuration for Google Cloud
-
-Remember: The goal is a working demo that showcases the core functionality and potential of the system. Prioritize integration and basic functionality of new views while preserving all existing work. Move slowly and methodically, testing each change thoroughly before proceeding.
+## Remember
+- Keep code modular and maintainable
+- Follow established patterns
+- Update tests as needed
+- Document any major changes
+- Focus on user experience
+- Maintain error handling
+- Keep performance in mind

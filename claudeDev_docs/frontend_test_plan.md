@@ -1,121 +1,173 @@
 # Frontend Test Plan
 
-## Objective
-To ensure the new TSX preview feature works correctly and all existing functionality remains intact in the WebSplat interface.
+## Component Testing Structure
 
-## Test Environment
-- Browser: Latest versions of Chrome, Firefox, and Safari
-- Screen sizes: Desktop, tablet, and mobile views
-- Frontend server running on localhost:3000
-- Backend server running on localhost:8000
+### 1. Header Component (Header.test.tsx)
+- Project name editing functionality
+- Autonomy slider toggle
+- Settings button interaction
+- Responsive layout
+- State management for editing modes
 
-## Test Cases
+### 2. LivePreview Component (LivePreview.test.tsx)
+- Desktop/mobile mode rendering
+- Workspace ID handling
+- Generated HTML display
+- Iframe management
+- Responsive scaling
 
-### 1. TSX Preview Feature
+### 3. MainContent Component (MainContent.test.tsx)
+- Chat interface functionality
+- Tab navigation system
+- Agent views display
+- Progress reporting
+- Strategy explanations
+- Message handling
+- First interaction state
 
-1.1 TSX Preview Generation
-- Enter a website concept in the chat input
-- Send the message
-- Verify that the TSX preview is generated and displayed in the "Preview" tab
-- Check that the generated TSX code is syntactically correct
+### 4. PreviewPanel Component (PreviewPanel.test.tsx)
+- Panel visibility toggle
+- Preview mode switching
+- LivePreview integration
+- Button states
+- Panel transitions
+- Layout responsiveness
 
-1.2 TSX Preview Display
-- Navigate to the "Preview" tab
-- Verify that the TSX code is displayed correctly
-- Check that long code snippets are scrollable
-- Ensure the code is readable (proper formatting and indentation)
+### 5. TypewriterText Component (TypewriterText.test.tsx)
+- Text animation progression
+- Timing accuracy
+- Cleanup handling
+- Text change management
+- Special character support
 
-1.3 TSX Preview Update
-- Send multiple messages with different website concepts
-- Verify that the TSX preview updates with each new concept
-- Check that the preview reflects the latest generated code
+### 6. MinimalAutonomyControl Component (MinimalAutonomyControl.test.tsx)
+- Slider functionality
+- Number input handling
+- Value constraints
+- Visual feedback
+- Input synchronization
+- Accessibility features
 
-### 2. Existing Functionality
+## Integration Testing (test_frontend.py)
 
-2.1 Chat Interface
-- Send messages and verify AI responses
-- Check that message history is displayed correctly
-- Verify that the input field clears after sending a message
+### End-to-End Workflows
+1. Complete User Journey
+   - Initial page load
+   - Chat interaction
+   - Preview generation
+   - Mode switching
+   - Settings adjustment
 
-2.2 Autonomy Level Adjustment
-- Adjust the autonomy level slider
-- Send a message and verify that the AI response reflects the new autonomy level
+2. State Management
+   - Project name persistence
+   - Workspace management
+   - Chat history
+   - Agent knowledge retention
 
-2.3 Agent Views
-- Navigate through all agent view tabs (UI Design, Monetization, SEO, Analytics, Deployment)
-- Verify that each tab displays the correct content
-- Check that the content updates when interacting with the AI
+3. Real-time Updates
+   - WebSocket communication
+   - Preview updates
+   - Progress tracking
+   - Agent responses
 
-2.4 Progress Report
-- Click the "Get Progress Report" button
-- Verify that a progress report is generated and displayed
-- Check that the report content is relevant and up-to-date
+### Cross-Component Interaction
+1. Header → MainContent
+   - Autonomy level changes
+   - Project name updates
 
-2.5 Strategy Explanation
-- For each agent view, click the "Explain [Agent] Strategy" button
-- Verify that a strategy explanation is generated and displayed
-- Check that the explanation is relevant to the selected agent
+2. MainContent → PreviewPanel
+   - Preview generation
+   - Mode synchronization
+   - Content updates
 
-2.6 Real-time Preview
-- Toggle the real-time preview panel
-- Verify that the preview opens and closes correctly
-- Check that the preview content updates with new TSX code
+3. LivePreview → PreviewPanel
+   - Display mode changes
+   - Content rendering
+   - Responsive adjustments
 
-2.7 Project Name Editing
-- Click on the project name to edit it
-- Enter a new name and save
-- Verify that the new name is displayed correctly
+## Test Execution Strategy
 
-### 3. Responsiveness and Layout
+### Unit Tests
+1. Run individual component tests:
+```bash
+npm test Header.test.tsx
+npm test LivePreview.test.tsx
+npm test MainContent.test.tsx
+npm test PreviewPanel.test.tsx
+npm test TypewriterText.test.tsx
+npm test MinimalAutonomyControl.test.tsx
+```
 
-3.1 Desktop View
-- Verify that all elements are correctly positioned and sized
-- Check that the sidebar opens and closes as expected
+### Integration Tests
+1. Run Selenium-based frontend tests:
+```bash
+python tests/test_frontend.py
+```
 
-3.2 Tablet View
-- Adjust the browser size to tablet dimensions
-- Verify that the layout adapts correctly
-- Check that all features are accessible and usable
+### Coverage Requirements
+- Component Tests: 90%+ coverage
+- Integration Tests: Key user flows covered
+- Visual Regression: Critical UI states verified
 
-3.3 Mobile View
-- Adjust the browser size to mobile dimensions
-- Verify that the layout adapts correctly
-- Check that all features are accessible and usable, possibly through a mobile-friendly menu
+## Error Handling Verification
+1. Network Errors
+   - API failures
+   - WebSocket disconnections
+   - Reconnection attempts
 
-### 4. Error Handling
+2. Input Validation
+   - Invalid user input
+   - Boundary conditions
+   - Special characters
 
-4.1 Network Errors
-- Simulate a network disconnection
-- Verify that appropriate error messages are displayed
-- Check that the interface gracefully handles the error
+3. State Recovery
+   - Page refresh handling
+   - Session persistence
+   - Error state recovery
 
-4.2 Invalid Input
-- Try sending empty messages or very long inputs
-- Verify that the interface handles these cases appropriately
+## Performance Testing
+1. Load Time Metrics
+   - Initial page load
+   - Component mounting
+   - Preview generation
 
-### 5. Performance
+2. Animation Performance
+   - Typewriter effect
+   - Panel transitions
+   - Preview updates
 
-5.1 Load Time
-- Measure the initial load time of the application
-- Verify that it's within acceptable limits (e.g., under 3 seconds)
+3. Memory Management
+   - Long chat sessions
+   - Multiple preview generations
+   - WebSocket connection handling
 
-5.2 Responsiveness
-- Interact with various elements of the interface
-- Verify that all interactions are smooth and responsive
+## Accessibility Testing
+1. Keyboard Navigation
+   - Tab order
+   - Shortcut keys
+   - Focus management
 
-## Test Execution
+2. Screen Reader Compatibility
+   - ARIA labels
+   - Semantic HTML
+   - Dynamic content updates
 
-1. Run through all test cases manually
-2. Document any issues or unexpected behavior
-3. For any failed tests, provide detailed steps to reproduce the issue
-4. After fixing issues, re-run the affected test cases to verify the fix
+3. Visual Accessibility
+   - Color contrast
+   - Text scaling
+   - Mobile responsiveness
 
-## Reporting
+## Test Maintenance
+1. Keep test files organized alongside components
+2. Update tests when component interfaces change
+3. Maintain comprehensive documentation
+4. Regular review of test coverage
+5. Update test plan as new features are added
 
-Create a test report including:
-- Summary of test results
-- Detailed list of any issues found
-- Recommendations for fixes or improvements
-- Overall assessment of the frontend's readiness for the MVP demo
-
-Remember to update this test plan as new features are added or existing ones are modified. Regular testing using this plan will help ensure the stability and functionality of the WebSplat interface.
+Remember:
+- Run tests before and after major changes
+- Keep tests focused and maintainable
+- Document any new test patterns
+- Monitor test performance and reliability
+- Update test data regularly
+- Maintain separation of concerns in tests

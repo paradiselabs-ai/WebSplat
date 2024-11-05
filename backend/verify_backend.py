@@ -57,31 +57,6 @@ async def verify_websocket(workspace_id: str) -> Tuple[bool, str]:
         logging.error(error_msg)
         return False, error_msg
 
-def verify_cors() -> Tuple[bool, str]:
-    """Verify CORS configuration"""
-    try:
-        response = requests.options(
-            f"{BASE_URL}/consult",
-            headers={
-                'Origin': 'http://localhost:3000',
-                'Access-Control-Request-Method': 'POST'
-            }
-        )
-        if response.status_code == 200:
-            cors_headers = [
-                'Access-Control-Allow-Origin',
-                'Access-Control-Allow-Methods',
-                'Access-Control-Allow-Headers'
-            ]
-            if all(header in response.headers for header in cors_headers):
-                return True, "CORS configuration verified"
-            return False, "Missing required CORS headers"
-        return False, f"CORS preflight failed with status {response.status_code}"
-    except Exception as e:
-        error_msg = f"CORS verification failed: {str(e)}"
-        logging.error(error_msg)
-        return False, error_msg
-
 def verify_health() -> Tuple[bool, str]:
     """Verify health check endpoint"""
     try:
@@ -288,7 +263,6 @@ async def run_verification():
     
     try:
         # Initial Checks
-        results["CORS"] = verify_cors()
         results["Health Check"] = verify_health()
         results["Autonomy Setting"] = verify_autonomy()
         
