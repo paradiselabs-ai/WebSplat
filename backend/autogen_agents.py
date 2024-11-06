@@ -34,6 +34,11 @@ if not openrouter_api_key:
     logging.error("OPENROUTER_API_KEY not found in environment variables")
     raise ValueError("OPENROUTER_API_KEY not found in environment variables")
 
+# Initialize NVIDIA client
+nvidia_api_key = os.getenv("NVIDIA_API_KEY")
+if not nvidia_api_key:
+    logging.warning("NVIDIA_API_KEY not found in environment variables. NVIDIA model will not be available.")
+
 # Initialize Tavily client
 tavily_api_key = os.getenv("TAVILY_API_KEY")
 if tavily_api_key:
@@ -84,33 +89,22 @@ def set_autonomy_level(level: int):
     AUTONOMY_LEVEL = level
     logging.info(f"Autonomy level set to {AUTONOMY_LEVEL}")
 
-def openrouter_call(prompt: str, model: str) -> str:
+def openrouter_call(prompt: str, model: str, messages: List[Dict[str, str]] = None) -> str:
     try:
         logging.info(f"Making OpenRouter API call to model: {model}")
         headers = {
             "Authorization": f"Bearer {openrouter_api_key}",
-            "Content-Type": "application/json",
-            "HTTP-Referer": "https://websplat.ai",
-            "X-Title": "WebSplat AI"
+            "Content-Type": "application/json"
         }
         
-        # Optimize prompt by removing unnecessary whitespace while preserving structure
-        prompt_lines = prompt.split('\n')
-        optimized_lines = [' '.join(line.split()) for line in prompt_lines if line.strip()]
-        prompt = '\n'.join(optimized_lines)
-        
-        # Configure request with token management
         data = {
             "model": model,
-            "messages": [{"role": "user", "content": prompt}],
-            "max_tokens": 2000,  # Limit response length
-            "temperature": 0.7,   # Control response randomness
-            "top_p": 0.9,        # Focus on more likely tokens
-            "frequency_penalty": 0.0,  # Reduce repetition
-            "presence_penalty": 0.0    # Encourage topic focus
+            "messages": messages if messages else [{"role": "user", "content": prompt}],
+            "max_tokens": 2000,
+            "temperature": 0.7,
+            "top_p": 0.9
         }
         
-        logging.info(f"OpenRouter request headers: {headers}")
         logging.info(f"OpenRouter request data: {data}")
         
         response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
@@ -125,26 +119,18 @@ def openrouter_call(prompt: str, model: str) -> str:
             if 'max_tokens limit exceeded' in error_message:
                 # Try with reduced token limits
                 data["max_tokens"] = 1000
-                # Keep system message but reduce user message length if needed
-                if len(prompt) > 3000:  # Approximate token limit
-                    user_lines = [line for line in prompt_lines if "user has requested:" in line.lower()]
-                    system_lines = [line for line in prompt_lines if "system message:" in line.lower()]
-                    other_lines = [line for line in prompt_lines if "generate" in line.lower() or "create" in line.lower()]
-                    reduced_prompt = '\n'.join(system_lines + user_lines + other_lines[:2])
-                    data["messages"][0]["content"] = reduced_prompt
-                
                 response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=data)
                 response_json = response.json()
                 if 'choices' in response_json:
                     return response_json['choices'][0]['message']['content']
             
-            return f"I apologize, but I encountered an error: {error_message}. Please try breaking your request into smaller parts."
+            return f"I apologize, but I encountered an error: {error_message}. Please try again."
         
         return response_json['choices'][0]['message']['content']
     except Exception as e:
         logging.error(f"OpenRouter API call failed: {e}")
         logging.error(f"Error details: {traceback.format_exc()}")
-        return "I apologize, but I encountered an error. Please try again with a simpler request."
+        return "I apologize, but I encountered an error. Please try again."
 
 def o1_mini_call(prompt: str) -> str:
     return openrouter_call(prompt, "mistralai/mistral-7b-instruct")
@@ -197,6 +183,50 @@ def perplexity_call(prompt: str) -> str:
         logging.error(f"Perplexity API call failed: {e}")
         return f"Perplexity API call failed: {str(e)}"
 
+def liquid_call(prompt: str) -> str:
+    """Call the Liquid model through OpenRouter."""
+    try:
+        print("\nMaking Liquid model call...")  # Debug print
+        print(f"Prompt: {prompt[:200]}...")  # Print first 200 chars
+        response = openrouter_call(prompt, "liquid/lfm-40b:free")
+        print(f"Liquid response: {response[:200]}...")  # Print first 200 chars
+        if "error" in response.lower():
+            print("Liquid call failed, falling back to NVIDIA...")  # Debug print
+            # If Liquid fails, try NVIDIA as fallback
+            return nvidia_call(prompt)
+        return response
+    except Exception as e:
+        print(f"Liquid API call failed: {e}")  # Debug print
+        logging.error(f"Liquid API call failed: {e}")
+        # If Liquid fails, try NVIDIA as fallback
+        return nvidia_call(prompt)
+
+def nvidia_call(prompt: str) -> str:
+    """Call the NVIDIA model as a fallback."""
+    if not nvidia_api_key:
+        return "NVIDIA model is not available due to missing API key."
+    try:
+        print("\nMaking NVIDIA model call...")  # Debug print
+        print(f"Prompt: {prompt[:200]}...")  # Print first 200 chars
+        client = openai.OpenAI(
+            base_url="https://integrate.api.nvidia.com/v1",
+            api_key=nvidia_api_key
+        )
+        completion = client.chat.completions.create(
+            model="meta/llama-3.1-405b-instruct",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.2,
+            top_p=0.7,
+            max_tokens=1024
+        )
+        response = completion.choices[0].message.content
+        print(f"NVIDIA response: {response[:200]}...")  # Print first 200 chars
+        return response
+    except Exception as e:
+        print(f"NVIDIA API call failed: {e}")  # Debug print
+        logging.error(f"NVIDIA API call failed: {e}")
+        return f"NVIDIA API call failed: {str(e)}"
+
 def web_search(query: str) -> List[Dict[str, str]]:
     if not tavily_client:
         return [{"title": "Web search unavailable", "content": "Tavily API is not available due to missing API key."}]
@@ -215,7 +245,9 @@ FUNCTION_MAP = {
     "claude_opus_call": claude_opus_call,
     "vertex_ai_call": vertex_ai_call,
     "perplexity_call": perplexity_call,
-    "web_search": web_search
+    "web_search": web_search,
+    "liquid_call": liquid_call,
+    "nvidia_call": nvidia_call
 }
 
 def is_termination_msg(x):
@@ -264,16 +296,48 @@ class EnhancedAssistantAgent(AssistantAgent):
 
     def generate_reply(self, messages: List[Dict[str, Any]], sender: Any, config: Dict[str, Any]) -> str:
         try:
+            print(f"\nGenerating reply for {self.name} using {self.function_name}")  # Debug print
             function = FUNCTION_MAP.get(self.function_name)
             if function:
-                prompt = self.system_message + "\n\n" + "\n".join([f"{m['role']}: {m['content']}" for m in messages])
-                return function(prompt)
+                # Format messages for chat completion
+                formatted_messages = []
+                
+                # Add system message first
+                formatted_messages.append({
+                    "role": "system",
+                    "content": self.system_message
+                })
+                
+                # Add conversation messages
+                for msg in messages:
+                    formatted_messages.append({
+                        "role": msg.get("role", "user"),
+                        "content": msg.get("content", "")
+                    })
+                
+                print(f"Formatted messages: {formatted_messages}")  # Debug print
+                
+                # Call the function with formatted messages
+                if self.function_name in ["liquid_call", "o1_call", "o1_mini_call", "claude_opus_call"]:
+                    response = function("", model=function.__defaults__[0], messages=formatted_messages)
+                else:
+                    # For other functions that don't support messages array, concatenate into prompt
+                    prompt = "\n\n".join([f"{m['role']}: {m['content']}" for m in formatted_messages])
+                    response = function(prompt)
+                
+                print(f"Response: {response[:200]}...")  # Print first 200 chars
+                return response
             else:
-                logging.error(f"Unknown function: {self.function_name}")
-                return f"Error: Unknown function {self.function_name}"
+                error_msg = f"Unknown function: {self.function_name}"
+                logging.error(error_msg)
+                print(error_msg)  # Debug print
+                return f"Error: {error_msg}"
         except Exception as e:
-            logging.error(f"Error in generate_reply: {e}")
-            return f"Error in generate_reply: {str(e)}"
+            error_msg = f"Error in generate_reply: {str(e)}"
+            logging.error(error_msg)
+            print(f"Error: {error_msg}")  # Debug print
+            print(f"Traceback: {traceback.format_exc()}")  # Debug print
+            return error_msg
 
     def add_task(self, task: str, priority: int = 1):
         self.tasks.append({"task": task, "priority": priority})
@@ -399,7 +463,7 @@ consultation_agent = EnhancedAssistantAgent(
     - Include basic styling
     - Make components responsive
     - Wrap the code with TSX_START and TSX_END markers""",
-    llm_config={"function": claude_opus_call, "model": "anthropic/claude-3-opus:beta"}
+    llm_config={"function": liquid_call, "model": "liquid/lfm-40b:free"}  # Primary model is Liquid with NVIDIA fallback
 )
 
 user_content_manager = EnhancedAssistantAgent(
@@ -588,5 +652,3 @@ if __name__ == "__main__":
     except Exception as e:
         logging.error(f"Main execution error: {e}")
         logging.error(f"Traceback: {traceback.format_exc()}")
-        print(f"An error occurred: {str(e)}")
-        print(f"Error details:\n{traceback.format_exc()}")

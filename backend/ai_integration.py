@@ -8,13 +8,15 @@ import tempfile
 import json
 from datetime import datetime
 from groundx import Groundx  # Fixed case sensitivity in import
+import logging
+import traceback
+import requests
 
 class AIIntegration:
     def __init__(self):
-        self.openrouter_client = OpenAI(
-            api_key=os.environ.get('OPENROUTER_API_KEY'),
-            base_url="https://openrouter.ai/api/v1"
-        )
+        print("\nInitializing AI Integration...")
+        print(f"OpenRouter API Key: {os.environ.get('OPENROUTER_API_KEY')[:5]}...")  # Only print first 5 chars for security
+        
         self.openai = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
         
         # Decode and save Google Cloud credentials
@@ -70,8 +72,11 @@ class AIIntegration:
         
         return credentials
 
-    def generate_text(self, prompt, model='o1', autonomy_level=50):
+    def generate_text(self, prompt, model='liquid', autonomy_level=50):  # Changed default model to 'liquid'
         try:
+            print(f"\nGenerating text with model: {model}")  # Debug print
+            print(f"Prompt: {prompt[:200]}...")  # Print first 200 chars
+            
             # Get relevant knowledge from GroundX
             relevant_knowledge = ""
             if self.bucket_id:
@@ -92,41 +97,160 @@ class AIIntegration:
             
             # Combine the prompt with relevant knowledge
             enhanced_prompt = f"Relevant knowledge: {relevant_knowledge}\n\nUser prompt: {prompt}"
+            print(f"Enhanced prompt: {enhanced_prompt[:200]}...")  # Debug print
             
-            if model == 'o1':
-                return self.o1_reasoning(enhanced_prompt, autonomy_level)
+            if model == 'liquid':
+                response = self.liquid_reasoning(enhanced_prompt, autonomy_level)
+            elif model == 'o1':
+                response = self.o1_reasoning(enhanced_prompt, autonomy_level)
             elif model == 'openai':
                 response = self.openai.completions.create(engine="text-davinci-002", prompt=enhanced_prompt, max_tokens=1000)
-                return response.choices[0].text.strip()
+                response = response.choices[0].text.strip()
             elif model == 'vertex':
-                return self.vertex_ai_reasoning(enhanced_prompt, autonomy_level)
+                response = self.vertex_ai_reasoning(enhanced_prompt, autonomy_level)
             elif model == 'gemini':
-                return self.gemini_reasoning(enhanced_prompt, autonomy_level)
+                response = self.gemini_reasoning(enhanced_prompt, autonomy_level)
             else:
                 raise ValueError(f"Unsupported model: {model}")
+            
+            print(f"Response: {response[:200]}...")  # Debug print
+            return response
         except Exception as e:
-            print(f"Error in generate_text: {e}")
-            return "I apologize, but I encountered an error processing your request. Please try again."
+            error_msg = f"Error in generate_text: {e}"
+            print(error_msg)  # Debug print
+            print(f"Traceback: {traceback.format_exc()}")  # Debug print
+            return f"I apologize, but I encountered an error: {error_msg}. Please try again."
+
+    def liquid_reasoning(self, prompt, autonomy_level):
+        """
+        Use Liquid model through OpenRouter with NVIDIA fallback.
+        """
+        print("\nMaking Liquid model call...")  # Debug print
+        print(f"Prompt: {prompt[:200]}...")  # Print first 200 chars
+        
+        try:
+            headers = {
+                "Authorization": f"Bearer {os.environ.get('OPENROUTER_API_KEY')}",
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "model": "liquid/lfm-40b:free",
+                "messages": [
+                    {"role": "system", "content": f"You are an AI assistant with advanced reasoning capabilities, specialized in web development and AI integration. Your autonomy level is set to {autonomy_level}%."},
+                    {"role": "user", "content": prompt}
+                ],
+                "max_tokens": 2000,
+                "temperature": 0.7,
+                "top_p": 0.9
+            }
+            
+            response = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers=headers,
+                json=data
+            )
+            
+            print(f"OpenRouter response status: {response.status_code}")  # Debug print
+            print(f"OpenRouter response: {response.text[:200]}...")  # Debug print
+            
+            if response.status_code != 200:
+                print("Liquid call failed, falling back to NVIDIA...")  # Debug print
+                return self.nvidia_reasoning(prompt, autonomy_level)
+                
+            response_json = response.json()
+            response_text = response_json['choices'][0]['message']['content']
+            
+            if "error" in response_text.lower():
+                print("Liquid call failed, falling back to NVIDIA...")  # Debug print
+                return self.nvidia_reasoning(prompt, autonomy_level)
+            return response_text
+        except Exception as e:
+            print(f"Liquid API call failed: {e}")  # Debug print
+            print(f"Traceback: {traceback.format_exc()}")  # Debug print
+            return self.nvidia_reasoning(prompt, autonomy_level)
+
+    def nvidia_reasoning(self, prompt, autonomy_level):
+        """
+        Use NVIDIA model as fallback.
+        """
+        print("\nMaking NVIDIA model call...")  # Debug print
+        print(f"Prompt: {prompt[:200]}...")  # Print first 200 chars
+        
+        try:
+            client = OpenAI(
+                base_url="https://integrate.api.nvidia.com/v1",
+                api_key=os.environ.get('NVIDIA_API_KEY')
+            )
+            completion = client.chat.completions.create(
+                model="meta/llama-3.1-405b-instruct",
+                messages=[
+                    {"role": "system", "content": f"You are an AI assistant with advanced reasoning capabilities, specialized in web development and AI integration. Your autonomy level is set to {autonomy_level}%."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=0.2,
+                top_p=0.7,
+                max_tokens=1024
+            )
+            response = completion.choices[0].message.content
+            print(f"NVIDIA response: {response[:200]}...")  # Debug print
+            return response
+        except Exception as e:
+            error_msg = f"NVIDIA API call failed: {e}"
+            print(error_msg)  # Debug print
+            print(f"Traceback: {traceback.format_exc()}")  # Debug print
+            return error_msg
 
     def o1_reasoning(self, prompt, autonomy_level, model="openai/o1-mini"):
         """
         Use O1 model for advanced reasoning tasks with adjustable autonomy.
         """
-        system_prompt = f"You are an AI assistant with advanced reasoning capabilities, specialized in web development and AI integration. Your autonomy level is set to {autonomy_level}%."
-        response = self.openrouter_client.chat.completions.create(
-            model=model,
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": prompt}
-            ],
-            max_tokens=2000
-        )
-        return response.choices[0].message.content
+        print("\nMaking O1 model call...")  # Debug print
+        print(f"Prompt: {prompt[:200]}...")  # Print first 200 chars
+        
+        try:
+            headers = {
+                "Authorization": f"Bearer {os.environ.get('OPENROUTER_API_KEY')}",
+                "Content-Type": "application/json"
+            }
+            
+            data = {
+                "model": model,
+                "messages": [
+                    {"role": "system", "content": f"You are an AI assistant with advanced reasoning capabilities, specialized in web development and AI integration. Your autonomy level is set to {autonomy_level}%."},
+                    {"role": "user", "content": prompt}
+                ],
+                "max_tokens": 2000,
+                "temperature": 0.7,
+                "top_p": 0.9
+            }
+            
+            response = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers=headers,
+                json=data
+            )
+            
+            if response.status_code != 200:
+                raise Exception(f"OpenRouter API error: {response.text}")
+                
+            response_json = response.json()
+            response_text = response_json['choices'][0]['message']['content']
+            print(f"O1 response: {response_text[:200]}...")  # Debug print
+            return response_text
+        except Exception as e:
+            error_msg = f"O1 API call failed: {e}"
+            print(error_msg)  # Debug print
+            print(f"Traceback: {traceback.format_exc()}")  # Debug print
+            return error_msg
 
     def vertex_ai_reasoning(self, prompt, autonomy_level):
         """
         Use Vertex AI for reasoning tasks with adjustable autonomy.
         """
+        print("\nMaking Vertex AI model call...")  # Debug print
+        print(f"Prompt: {prompt[:200]}...")  # Print first 200 chars
+        
         parameters = {
             "temperature": autonomy_level / 100,
             "max_output_tokens": 1024,
@@ -137,12 +261,16 @@ class AIIntegration:
         system_prompt = f"You are an AI assistant with advanced reasoning capabilities, specialized in web development and AI integration. Your autonomy level is set to {autonomy_level}%."
         full_prompt = f"{system_prompt}\n\nUser: {prompt}\n\nAssistant:"
         response = model.predict(full_prompt, **parameters)
+        print(f"Vertex AI response: {response.predictions[0][:200]}...")  # Debug print
         return response.predictions[0]
 
     def gemini_reasoning(self, prompt, autonomy_level):
         """
         Use Gemini for reasoning tasks with adjustable autonomy.
         """
+        print("\nMaking Gemini model call...")  # Debug print
+        print(f"Prompt: {prompt[:200]}...")  # Print first 200 chars
+        
         model = genai.GenerativeModel('gemini-pro')
         system_prompt = f"You are an AI assistant with advanced reasoning capabilities, specialized in web development and AI integration. Your autonomy level is set to {autonomy_level}%."
         chat = model.start_chat(history=[])
@@ -152,12 +280,16 @@ class AIIntegration:
             top_k=40,
             max_output_tokens=1024
         ))
+        print(f"Gemini response: {response.text[:200]}...")  # Debug print
         return response.text
 
     def get_agent_response(self, agent_type, prompt, autonomy_level):
         """
         Get response from a specific agent type.
         """
+        print(f"\nGetting response for agent type: {agent_type}")  # Debug print
+        print(f"Prompt: {prompt[:200]}...")  # Print first 200 chars
+        
         agent_prompts = {
             "UI Design": "As a UI Design expert, ",
             "Monetization": "As a Monetization strategist, ",
@@ -181,7 +313,7 @@ class AIIntegration:
                 print(f"Error retrieving knowledge from GroundX: {e}")
         
         full_prompt = f"{agent_prompts.get(agent_type, '')}{prompt}\n\nRelevant knowledge: {relevant_knowledge}"
-        response = self.generate_text(full_prompt, model='gemini', autonomy_level=autonomy_level)
+        response = self.generate_text(full_prompt, model='liquid', autonomy_level=autonomy_level)  # Changed default model to 'liquid'
         
         # Update the shared knowledge base with the new response
         self.update_shared_knowledge(agent_type, response)
@@ -192,6 +324,7 @@ class AIIntegration:
         """
         Update the shared knowledge base with new information.
         """
+        print(f"\nUpdating shared knowledge for {agent_type}")  # Debug print
         self.shared_knowledge[agent_type].append(new_knowledge)
         
         # Update GroundX knowledge base

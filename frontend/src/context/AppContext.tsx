@@ -5,10 +5,19 @@ import { Message } from '../utils/Message';
 import { AgentView } from '../utils/AgentView';
 import useWebSocket from '../utils/websocket';
 import { Layout, DollarSign, Search, BarChart2, Cloud } from 'lucide-react';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
+import { config } from '../utils/config';
 
 interface AppContextProps { 
   children: React.ReactNode;
+}
+
+interface WebSocketMessage {
+  type: 'chat_message';
+  role: 'user' | 'ai';
+  content: string;
+  agent?: string;
+  autonomy_level?: number;
 }
 
 interface AppContextValue {
@@ -82,8 +91,8 @@ const AppProvider = ({ children }: AppContextProps) => {
     const [cursorPosition, setCursorPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
     const [hasError, setHasError] = useState<boolean>(false);
 
-    // Initialize WebSocket connection
-    const socket = useWebSocket(workspaceId, {
+    // Initialize WebSocket connection with enhanced functionality
+    const { isConnected, sendMessage } = useWebSocket(workspaceId, {
       setGeneratedHtml,
       setOverallProgress,
       setProgressReport,
@@ -95,11 +104,29 @@ const AppProvider = ({ children }: AppContextProps) => {
 
     // Log WebSocket status changes
     useEffect(() => {
-      if (socket) {
-        console.log('WebSocket connected for workspace:', workspaceId);
+      if (isConnected) {
+        console.log('WebSocket connected and ready for workspace:', workspaceId);
         setHasError(false);
       }
-    }, [socket, workspaceId]);
+    }, [isConnected, workspaceId]);
+
+    // Handle workspace persistence
+    useEffect(() => {
+      // Try to load workspace ID from localStorage
+      const savedWorkspaceId = localStorage.getItem('websplat_workspace_id');
+      if (savedWorkspaceId && !workspaceId) {
+        console.log('Restoring workspace ID from storage:', savedWorkspaceId);
+        setWorkspaceId(savedWorkspaceId);
+      }
+    }, [workspaceId]);
+
+    // Save workspace ID when it changes
+    useEffect(() => {
+      if (workspaceId) {
+        console.log('Saving workspace ID to storage:', workspaceId);
+        localStorage.setItem('websplat_workspace_id', workspaceId);
+      }
+    }, [workspaceId]);
 
     useEffect(() => {
         const handleMouseMove = (e: MouseEvent) => {
@@ -129,56 +156,66 @@ const AppProvider = ({ children }: AppContextProps) => {
         e.preventDefault();
         if (inputMessage.trim() === '' || isSending) return;
 
-        console.log('Sending message:', inputMessage);
-        console.log('Current isFirstInteraction:', isFirstInteraction);
-
+        console.log('Sending message:', inputMessage, {
+            autonomyLevel,
+            currentWorkspaceId: workspaceId
+        });
         setIsSending(true);
         setHasError(false);
         
         if (isFirstInteraction) {
-          console.log('Setting isFirstInteraction to false');
           setIsFirstInteraction(false);
         }
 
         try {
-          console.log('Making API request...');
-          const response = await axios.post('http://localhost:8000/consult', {
+          console.log('Making POST request to:', config.endpoints.consult);
+          const response = await axios.post(config.endpoints.consult, {
             message: inputMessage,
             autonomy_level: autonomyLevel,
             workspace_id: workspaceId
           });
 
-          console.log('API response:', response.data);
+          console.log('API response:', {
+            status: response.status,
+            data: response.data,
+            headers: response.headers
+          });
 
+          // Update workspace ID from response
           if (response.data.workspace_id) {
+            console.log('Setting new workspace ID:', response.data.workspace_id);
             setWorkspaceId(response.data.workspace_id);
+          } else {
+            console.warn('No workspace_id in response:', response.data);
           }
 
-          // Update generated HTML if TSX preview is present
-          if (response.data.tsx_preview) {
-            console.log('Setting generated HTML:', response.data.tsx_preview);
-            setGeneratedHtml(response.data.tsx_preview);
+          // Send message through WebSocket, let the hook handle queueing
+          if (sendMessage) {
+            const wsMessage: WebSocketMessage = {
+              type: 'chat_message',
+              role: 'user',
+              content: inputMessage,
+              autonomy_level: autonomyLevel
+            };
+            console.log('Sending/queueing WebSocket message:', wsMessage);
+            sendMessage(wsMessage);
           }
 
-          // Update agent views based on shared knowledge
-          if (response.data.shared_knowledge) {
-            console.log('Updating agent views with:', response.data.shared_knowledge);
-            const updatedAgentViews = agentViews.map(view => {
-              const knowledge = response.data.shared_knowledge[view.name];
-              return {
-                ...view,
-                content: knowledge ? [...view.content, knowledge].flat() : view.content
-              };
-            });
-            setAgentViews(updatedAgentViews);
-          }
-
+          // Clear input after successful send
           setInputMessage('');
 
-        } catch (error) {
-          console.error('Error sending message:', error);
+        } catch (error: unknown) {
+          if (error instanceof AxiosError) {
+            console.error('Error sending message:', {
+              error: error.message,
+              request: error.request,
+              response: error.response,
+              config: error.config
+            });
+          } else {
+            console.error('Unknown error:', error);
+          }
           setHasError(true);
-          // Let WebSocket handle error message display
         } finally {
           setIsSending(false);
         }
@@ -202,7 +239,7 @@ const AppProvider = ({ children }: AppContextProps) => {
     
     const requestProgressReport = async () => {
         try {
-          const response = await axios.get('http://localhost:8000/progress_report', {
+          const response = await axios.get(config.endpoints.progressReport, {
             params: { workspace_id: workspaceId }
           });
           setProgressReport(response.data.report);
@@ -218,7 +255,7 @@ const AppProvider = ({ children }: AppContextProps) => {
     
     const requestStrategyExplanation = async (strategyType: string) => {
         try {
-          const response = await axios.post('http://localhost:8000/explain_strategy', {
+          const response = await axios.post(config.endpoints.explainStrategy, {
             strategy_type: strategyType,
             workspace_id: workspaceId
           });

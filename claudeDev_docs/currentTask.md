@@ -105,7 +105,25 @@ Implement New User Interface and Agent Workflow with Live TSX Preview (MVP for H
 
 ## v0 Demo Issues List
 
-### 1. Message Handling (High Priority)
+### 1. Workspace Management (High Priority)
+- [ ] Implement workspace persistence and cleanup
+  - Add workspace state persistence between page reloads
+  - Implement proper cleanup of old workspaces
+  - Add workspace recovery mechanisms
+  - Ensure all backend tests remain passing
+  - Maintain existing workspace functionality
+- [ ] Add workspace state management
+  - Track workspace status in frontend
+  - Handle workspace reconnection
+  - Preserve workspace context
+  - Sync workspace state between frontend/backend
+- [ ] Implement workspace sharing
+  - Add workspace_id in URL for sharing
+  - Handle shared workspace loading
+  - Maintain workspace isolation
+  - Ensure proper security boundaries
+
+### 2. Message Handling (High Priority)
 - [ ] Fix double message addition in AppContext.tsx
   - Messages being added both in handleSendMessage and through WebSocket
   - Need to consolidate message addition to WebSocket only
@@ -116,7 +134,7 @@ Implement New User Interface and Agent Workflow with Live TSX Preview (MVP for H
   - Ensure WebSocket messages and HTTP responses stay in sync
   - Add message sequence tracking
 
-### 2. Real-time Preview System (High Priority)
+### 3. Real-time Preview System (High Priority)
 - [ ] Add preview loading states
   - Show loading indicator while preview is being generated
   - Add error state for failed previews
@@ -128,7 +146,7 @@ Implement New User Interface and Agent Workflow with Live TSX Preview (MVP for H
   - Faster preview updates
   - Better mobile/desktop switching
 
-### 3. WebSocket Connection (Medium Priority)
+### 4. WebSocket Connection (Medium Priority)
 - [ ] Add connection status indicator
   - Visual indicator of WebSocket connection state
   - User-friendly connection status messages
@@ -139,7 +157,7 @@ Implement New User Interface and Agent Workflow with Live TSX Preview (MVP for H
   - Graceful handling of connection losses
   - Automatic state recovery on reconnect
 
-### 4. State Management (Medium Priority)
+### 5. State Management (Medium Priority)
 - [ ] Remove unused generatedHtml state
   - Clean up AppContext state
   - Update related components
@@ -149,17 +167,6 @@ Implement New User Interface and Agent Workflow with Live TSX Preview (MVP for H
 - [ ] Add proper error state handling
   - Propagate errors to UI
   - Show user-friendly error messages
-
-### 5. Workspace Management (Low Priority)
-- [ ] Implement workspace cleanup
-  - Add cleanup of old workspaces
-  - Implement workspace expiration
-- [ ] Add workspace persistence
-  - Save workspace state between reloads
-  - Add workspace recovery
-- [ ] Add workspace sharing
-  - Implement workspace_id in URL
-  - Add workspace state sharing
 
 ## Urgent Steps
 1. Run complete integration tests
@@ -181,6 +188,9 @@ Implement New User Interface and Agent Workflow with Live TSX Preview (MVP for H
 - Test thoroughly
 - Document edge cases
 - Track performance
+- Maintain backend stability
+- Verify backend tests after changes
+- Handle workspace state carefully
 
 ## Remember
 - Keep code modular and maintainable
@@ -190,3 +200,7 @@ Implement New User Interface and Agent Workflow with Live TSX Preview (MVP for H
 - Focus on user experience
 - Maintain error handling
 - Keep performance in mind
+- Preserve backend functionality
+- Test backend after changes
+- Never omit existing code
+- Never use code placeholders
